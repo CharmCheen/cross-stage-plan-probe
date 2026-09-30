@@ -5,8 +5,9 @@ from cspp.tracing.trace import ByteCreditQueue, LiveByteLedger, TraceRecorder, r
 
 
 def test_deterministic_trace_semantic_order(config, records):
-    first = run_synthetic_pipeline(config, records, "trace-one")["events"]
-    second = run_synthetic_pipeline(config, records, "trace-two")["events"]
+    first_result = run_synthetic_pipeline(config, records, "trace-one")
+    second_result = run_synthetic_pipeline(config, records, "trace-two")
+    first, second = first_result["events"], second_result["events"]
 
     def semantic(events):
         return [(e["event_type"], e.get("occurrence_id"), e.get("object_id")) for e in events
@@ -19,7 +20,9 @@ def test_deterministic_trace_semantic_order(config, records):
             assert event["ready_time_ns"] == event["ts_ns"]
         if event["event_type"] == "consumer_start":
             assert event["metadata"]["ready_time_ns"] <= event["ts_ns"]
-    assert validate_trace(first, config["resources"]["queue_byte_budget"]) == []
+    assert validate_trace(first, config["resources"]["queue_byte_budget"],
+                          expected_occurrences={r["occurrence_id"]: r for r in records},
+                          expected_run_id="trace-one", expected_run_context=first_result["run_context"]) == []
 
 
 def test_byte_credit_blocks_until_live_object_release():
@@ -46,7 +49,7 @@ def test_byte_credit_blocks_until_live_object_release():
     assert any(e["event_type"] == "queue_block_start" for e in trace.events)
     assert not admitted.is_set()
     item = queue.get()
-    assert item is a
+    assert {key: item[key] for key in a} == a
     assert not admitted.is_set(), "dequeue must not return credit while object remains live"
     ledger.release("A", "consumer")
     queue.release_credit(a)
@@ -59,7 +62,8 @@ def test_byte_credit_blocks_until_live_object_release():
 def test_lifetime_reconciliation_and_all_layers(config, records):
     result = run_synthetic_pipeline(config, records, "lifetime-test")
     assert result["ledger"].totals == {"host": 0, "pinned": 0, "gpu": 0}
-    assert validate_trace(result["events"], 100) == []
+    assert validate_trace(result["events"], 100, expected_occurrences={r["occurrence_id"]: r for r in records},
+                          expected_run_id="lifetime-test", expected_run_context=result["run_context"]) == []
     assert any(e["event_type"] == "ownership_transfer" for e in result["events"])
 
 
@@ -141,7 +145,7 @@ def test_validator_detects_double_release_event(config, records):
     events.append(release)
     events.sort(key=lambda e: e["ts_ns"])
     errors = validate_trace(events, 100)
-    assert any("release for non-live object" in error for error in errors)
+    assert any("release for unknown/already released object" in error for error in errors)
 
 
 def test_validator_detects_missing_manifest_occurrence(config, records):
@@ -150,7 +154,7 @@ def test_validator_detects_missing_manifest_occurrence(config, records):
     events = [event for event in events if event.get("occurrence_id") != omitted]
     expected = {r["occurrence_id"]: r for r in records}
     errors = validate_trace(events, 100, expected_occurrences=expected)
-    assert any(f"no terminal object release: {omitted}" in error for error in errors)
+    assert any(f"required logical occurrence lacks exactly one consumer execution: {omitted}" in error for error in errors)
 
 
 def test_validator_rejects_negative_timestamp(config, records):
@@ -178,4 +182,4 @@ def test_validator_rejects_incorrect_ownership_transfer(config, records):
     transfer = next(e for e in copied if e["event_type"] == "ownership_transfer")
     transfer["metadata"]["old_owner"] = "not-the-owner"
     errors = validate_trace(copied, 100)
-    assert any("incorrect ownership transfer" in error for error in errors)
+    assert any("ownership transfer does not match live owner" in error for error in errors)

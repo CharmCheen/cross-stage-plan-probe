@@ -31,10 +31,11 @@ def main() -> int:
         config["fixture"].update(object_sizes=sizes, producer_delays_ms=producer_delays,
                                  consumer_delays_ms=consumer_delays)
         result = run_synthetic_pipeline(config, records, f"m2-{case}")
+        expected = {r["occurrence_id"]: r for r in records}
         errors = validate_trace(result["events"], capacity,
-                                expected_occurrences={r["occurrence_id"]: r for r in records},
-                                expected_run_id=f"m2-{case}")
-        recorder = TraceRecorder(f"m2-{case}")
+                                expected_occurrences=expected,
+                                expected_run_id=f"m2-{case}", expected_run_context=result["run_context"])
+        recorder = TraceRecorder(f"m2-{case}", run_context=result["run_context"])
         recorder.events = result["events"]
         recorder.write_jsonl(out / f"{case}.jsonl")
         summary[case] = {

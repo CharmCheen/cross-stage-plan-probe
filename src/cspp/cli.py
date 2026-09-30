@@ -9,14 +9,15 @@ import shutil
 import sys
 import statistics
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from cspp.config import ConfigError, load_config
-from cspp.environment import write_environment_artifacts
-from cspp.legality import legality_report, write_legality_report
+from cspp.config import ConfigError, load_config, validate_config_manifest
+from cspp.environment import probe_environment, write_environment_artifacts
+from cspp.legality import build_execution_context, legality_report, write_legality_report
 from cspp.manifest import load_manifest, manifest_hash, validate_manifest
 from cspp.tracing.trace import run_synthetic_pipeline, validate_trace
 
@@ -43,6 +44,7 @@ def command_doctor(args: argparse.Namespace) -> int:
 def command_validate_config(args: argparse.Namespace) -> int:
     config = load_config(_resolved(args.config))
     resolved = _resolved(args.config)
+    validate_config_manifest(config, load_manifest(_resolved(config["manifest"]["path"])))
     snapshot = dict(config)
     snapshot["_source"] = str(resolved.resolve())
     snapshot["_sha256"] = hashlib.sha256(resolved.read_bytes()).hexdigest()
@@ -66,6 +68,7 @@ def command_validate_manifest(args: argparse.Namespace) -> int:
 def command_legality(args: argparse.Namespace) -> int:
     config = load_config(_resolved(args.config))
     records = load_manifest(_resolved(config["manifest"]["path"]))
+    validate_config_manifest(config, records)
     report = legality_report(records, config["experiment"]["seed"])
     if args.out:
         write_legality_report(_resolved(args.out), report)
@@ -74,64 +77,79 @@ def command_legality(args: argparse.Namespace) -> int:
 
 
 def command_smoke(args: argparse.Namespace) -> int:
+    run_id = args.run_id or f"m2-smoke-{uuid.uuid4().hex[:12]}"
+    if not isinstance(run_id, str) or not run_id or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for c in run_id):
+        raise ValueError("run_id must contain only letters, digits, hyphen, underscore")
+    run_dir = ROOT / "artifacts" / "runs" / run_id
+    if run_dir.exists():
+        raise ValueError(f"run artifact already exists; refusing to overwrite provenance: {run_dir}")
+    run_dir.mkdir(parents=True)
     config_path = _resolved(args.config)
-    config = load_config(config_path)
-    records = load_manifest(_resolved(config["manifest"]["path"]))
-    manifest_errors = validate_manifest(records)
-    if manifest_errors:
-        raise ValueError("manifest invalid: " + "; ".join(manifest_errors))
-    report = legality_report(records, config["experiment"]["seed"])
-    if not report["valid"]:
-        raise ValueError("legality validation failed")
-    result = run_synthetic_pipeline(config, records, args.run_id)
-    expected = {r["occurrence_id"]: r for r in records}
-    errors = validate_trace(result["events"], config["resources"]["queue_byte_budget"],
-                            expected_occurrences=expected, expected_run_id=args.run_id)
-    run_dir = ROOT / "artifacts" / "runs" / args.run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
-    trace_path = run_dir / "trace.jsonl"
-    from cspp.tracing.trace import TraceRecorder
-
-    recorder = TraceRecorder(args.run_id)
-    recorder.events = result["events"]
-    recorder.write_jsonl(trace_path)
-    _json_dump(run_dir / "legality_report.json", report)
-    resolved_config = dict(config)
-    resolved_config["_sha256"] = hashlib.sha256(config_path.read_bytes()).hexdigest()
-    _json_dump(run_dir / "resolved_config.json", resolved_config)
-    git_commit = _git_commit()
-    run_manifest = {
-        "run_id": args.run_id,
-        "git_commit": git_commit,
-        "config_hash": resolved_config["_sha256"],
-        "manifest_hash": manifest_hash(records),
-        "plan_d": "synthetic",
-        "plan_t": "consumer",
-        "seed": config["experiment"]["seed"],
-        "resources": config["resources"],
-        "environment": write_environment_artifacts(ROOT),
-        "cache_state": "synthetic_fixture_no_data_cache",
-        "valid": not errors,
-        "invalid_reason": "; ".join(errors) if errors else None,
-    }
+    run_manifest: dict[str, Any] = {"run_id": run_id, "status": "PREFLIGHT", "valid": False,
+                                    "git_commit": _git_commit(), "config_hash": hashlib.sha256(config_path.read_bytes()).hexdigest() if config_path.is_file() else "UNKNOWN",
+                                    "manifest_hash": "UNKNOWN", "plan_d": "UNKNOWN", "plan_t": "UNKNOWN",
+                                    "seed": None, "resources": {}, "failure_reason": None}
     _json_dump(run_dir / "run_manifest.json", run_manifest)
-    _json_dump(run_dir / "trace_validation.json", {"valid": not errors, "errors": errors,
-                                                      "events": len(result["events"]),
-                                                      "final_live_bytes": result["ledger"].totals,
-                                                      "final_queue_bytes": result["queue"].queued_bytes})
-    if errors:
-        print("TRACE INVALID: " + "; ".join(errors), file=sys.stderr)
+    try:
+        config = load_config(config_path)
+        run_manifest.update({"seed": config["experiment"]["seed"],
+                             "workload_version": config["experiment"]["workload_version"],
+                             "plan_d": config["execution"]["input_plan_id"],
+                             "plan_t": config["execution"]["training_plan_id"],
+                             "resources": config["resources"]})
+        _json_dump(run_dir / "run_manifest.json", run_manifest)
+        records = load_manifest(_resolved(config["manifest"]["path"]))
+        run_manifest.update({"manifest_hash": manifest_hash(records),
+                             "rng_scheme_version": records[0]["rng_scheme_version"]})
+        _json_dump(run_dir / "run_manifest.json", run_manifest)
+        validate_config_manifest(config, records)
+        report = legality_report(records, config["experiment"]["seed"])
+        config_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
+        context = build_execution_context(records, config, run_id, config_hash, _git_commit(), _git_dirty())
+        resolved_config = dict(config); resolved_config["_sha256"] = config_hash
+        _json_dump(run_dir / "resolved_config.json", resolved_config)
+        run_manifest.update({"status": "RUNNING", "config_hash": config_hash,
+                             "manifest_hash": manifest_hash(records), "seed": config["experiment"]["seed"],
+                             "workload_version": config["experiment"]["workload_version"],
+                             "rng_scheme_version": context["rng_scheme_version"],
+                             "frame_ids_hash": context["frame_ids_hash"], "draws_hash": context["draws_hash"],
+                             "plan_d": context["input_plan_id"], "plan_t": context["training_plan_id"],
+                             "resources": config["resources"], "run_context": context,
+                             "environment": probe_environment(ROOT), "cache_state": "synthetic_fixture_no_data_cache"})
+        _json_dump(run_dir / "run_manifest.json", run_manifest)
+        _json_dump(run_dir / "legality_report.json", report)
+        result = run_synthetic_pipeline(config, records, run_id, run_context=context)
+        expected = {r["occurrence_id"]: r for r in records}
+        errors = validate_trace(result["events"], config["resources"]["queue_byte_budget"],
+                                expected_occurrences=expected, expected_run_id=run_id,
+                                expected_run_context=context)
+        from cspp.tracing.trace import TraceRecorder
+        recorder = TraceRecorder(run_id, run_context=context); recorder.events = result["events"]
+        recorder.write_jsonl(run_dir / "trace.jsonl")
+        _json_dump(run_dir / "trace_validation.json", {"valid": not errors, "errors": errors,
+                    "events": len(result["events"]), "final_live_bytes": result["ledger"].totals,
+                    "final_credit_bytes": result["queue"].queued_bytes})
+        run_manifest.update({"status": "VALID" if not errors else "INVALID", "valid": not errors,
+                             "failure_reason": "; ".join(errors) if errors else None})
+        _json_dump(run_dir / "run_manifest.json", run_manifest)
+        if errors:
+            print("TRACE INVALID: " + "; ".join(errors), file=sys.stderr)
+            return 2
+        print(json.dumps({"valid": True, "run_id": run_id, "trace": str(run_dir / "trace.jsonl"),
+                          "events": len(result["events"]), "final_live_bytes": result["ledger"].totals}, indent=2))
+        return 0
+    except Exception as exc:
+        run_manifest.update({"status": "INVALID", "valid": False, "failure_reason": f"{type(exc).__name__}: {exc}"})
+        _json_dump(run_dir / "run_manifest.json", run_manifest)
+        _json_dump(run_dir / "trace_validation.json", {"valid": False, "errors": [run_manifest["failure_reason"]]})
+        print(f"error: {run_manifest['failure_reason']}", file=sys.stderr)
         return 2
-    milestone = ROOT / "artifacts" / "milestones" / "M2"
-    milestone.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(trace_path, milestone / "generated_trace.jsonl")
-    shutil.copy2(run_dir / "run_manifest.json", milestone / "run_manifest.json")
-    shutil.copy2(run_dir / "legality_report.json", milestone / "legality_report.json")
-    overhead = _measure_trace_overhead(config, records)
-    _json_dump(milestone / "tracing_overhead.json", overhead)
-    print(json.dumps({"valid": True, "run_id": args.run_id, "trace": str(trace_path),
-                      "events": len(result["events"]), "final_live_bytes": result["ledger"].totals}, indent=2))
-    return 0
+
+
+def _git_dirty() -> bool | str:
+    import subprocess
+    result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False)
+    return bool(result.stdout.strip()) if result.returncode == 0 else "UNKNOWN"
 
 
 def _measure_trace_overhead(config: dict[str, Any], records: list[dict[str, Any]], repeats: int = 3) -> dict[str, Any]:
@@ -143,7 +161,8 @@ def _measure_trace_overhead(config: dict[str, Any], records: list[dict[str, Any]
             result = run_synthetic_pipeline(config, records, f"overhead-{index}-{enabled}", tracing=enabled)
             bucket.append(time.perf_counter_ns() - started)
             if enabled and validate_trace(result["events"], config["resources"]["queue_byte_budget"],
-                                          expected_occurrences={r["occurrence_id"]: r for r in records}):
+                                          expected_occurrences={r["occurrence_id"]: r for r in records},
+                                          expected_run_id=result["run_id"], expected_run_context=result["run_context"]):
                 raise ValueError("tracing-on overhead run produced invalid trace")
     on_median, off_median = statistics.median(traced), statistics.median(untraced)
     return {
@@ -176,11 +195,50 @@ def command_audit_export(args: argparse.Namespace) -> int:
         print(f"incomplete run artifacts: {missing}", file=sys.stderr)
         return 2
     destination = _resolved(args.out)
+    if destination.exists() and any(destination.iterdir()):
+        print(f"refusing to overwrite non-empty audit export: {destination}", file=sys.stderr)
+        return 2
     destination.mkdir(parents=True, exist_ok=True)
-    for name in required:
+    for name in [*required, *( ["trace_validation_recheck.json"] if (run_dir / "trace_validation_recheck.json").is_file() else [])]:
         shutil.copy2(run_dir / name, destination / name)
     print(f"exported {args.run} -> {destination}")
     return 0
+
+
+def command_validate_trace(args: argparse.Namespace) -> int:
+    config_path = _resolved(args.config)
+    config = load_config(_resolved(args.config))
+    records = load_manifest(_resolved(config["manifest"]["path"]))
+    validate_config_manifest(config, records)
+    run_dir = ROOT / "artifacts" / "runs" / args.run
+    try:
+        run_manifest = json.loads((run_dir / "run_manifest.json").read_text(encoding="utf-8"))
+        lines = (run_dir / "trace.jsonl").read_text(encoding="utf-8").splitlines()
+        events = [json.loads(line) for line in lines]
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"cannot load trace provenance: {exc}", file=sys.stderr)
+        return 2
+    stored_context = run_manifest.get("run_context")
+    config_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
+    errors: list[str] = []
+    if run_manifest.get("config_hash") != config_hash:
+        errors.append("current resolved config hash differs from run provenance")
+    try:
+        expected_context = build_execution_context(records, config, args.run, config_hash,
+                                                   (stored_context or {}).get("git_commit", "UNKNOWN"),
+                                                   (stored_context or {}).get("git_dirty", "UNKNOWN"))
+        if not stored_context or expected_context != stored_context:
+            errors.append("stored run context does not match resolved config/manifest/seed")
+    except (KeyError, TypeError, ValueError) as exc:
+        errors.append(f"cannot reconstruct expected run context: {exc}")
+        expected_context = stored_context
+    errors.extend(validate_trace(events, config["resources"]["queue_byte_budget"],
+                            expected_occurrences={r["occurrence_id"]: r for r in records},
+                            expected_run_id=args.run, expected_run_context=expected_context))
+    result = {"valid": not errors, "errors": errors, "events": len(events)}
+    _json_dump(run_dir / "trace_validation_recheck.json", result)
+    print(json.dumps(result, indent=2))
+    return 0 if not errors else 2
 
 
 def command_not_in_scope(args: argparse.Namespace) -> int:
@@ -203,12 +261,16 @@ def build_parser() -> argparse.ArgumentParser:
     legality_cmd.add_argument("--out")
     smoke = subs.add_parser("smoke")
     smoke.add_argument("--config", required=True)
-    smoke.add_argument("--run-id", default="m2-synthetic-smoke")
+    smoke.add_argument("--run-id", default=None)
     smoke.set_defaults(handler=command_smoke)
     export = subs.add_parser("audit-export")
     export.add_argument("--run", required=True)
     export.add_argument("--out", required=True)
     export.set_defaults(handler=command_audit_export)
+    trace_validation = subs.add_parser("validate-trace")
+    trace_validation.add_argument("--run", required=True)
+    trace_validation.add_argument("--config", required=True)
+    trace_validation.set_defaults(handler=command_validate_trace)
     for name in ("calibrate-input", "calibrate-training"):
         cmd = subs.add_parser(name)
         cmd.add_argument("--config", required=True)

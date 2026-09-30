@@ -89,3 +89,52 @@ Please determine:
 8. Could instrumentation materially alter the measured behavior, and is the current overhead diagnostic adequate?
 9. Is there any scope creep relative to M0–M2 and the frozen research pack?
 10. May M3 begin after this M0–M2 audit?
+
+## R1–R4 remediation
+
+This section is an additive remediation record. The first M0–M2 Sol audit findings and the original milestone notes above are preserved as historical context. The prior verdict was `APPROVE_WITH_REQUIRED_FIXES`, with research status `ENGINEERING_NOT_READY`; this update does not represent Sol approval.
+
+### Previous blocking findings retained
+
+- Resource snapshots were trusted rather than independently reconstructed; credit could be returned before terminal release; wrong release bytes/layer were not reliably rejected.
+- Traces could omit consumer execution or report exposed wait without proving a causal consumer timeline; producer duration did not match its interval.
+- Readiness depended on the literal `synthetic_producer` operator name, and the validator assumed one physical allocation per logical occurrence.
+- Run seed, config/workload identity, manifest draws/frame selection, and plan IDs were not fully bound; NUL-delimited RNG material was ambiguous; some measurement options such as `trace.enabled=false` could be ignored.
+
+### R1 — Resource-state invariants
+
+- Code: `src/cspp/tracing/trace.py` now keeps byte credit by object ID until a single exact return after terminal release. Dequeue and ownership transfer leave credit unchanged. The validator rebuilds admission-credit and per-layer live-byte totals from event transitions, and checks every emitted snapshot against its independent reconstruction. Allocations have permanent unique IDs; release checks bytes, layer, owner, and terminal state.
+- Tests: independent mutated-event cases cover early return, return-byte mismatch, duplicate/unknown return, wrong release bytes/layer, forged zero live snapshots, and a false dequeue credit decrease. The A/B/C/D fixture replay remains valid.
+- Result: **PASS** in targeted negative-oracle tests and full regression.
+
+### R2 — Causal completion and consumer timeline
+
+- Code: trace events now carry run/plan/manifest context and stable event IDs. Producer, consumer, wait, and blocked intervals are explicitly paired; observed durations derive from monotonic start/end timestamps. Each frozen occurrence must complete a dependency → ready → admission → dequeue → one consumer execution → release chain. Consumer execution order follows frozen step/baseline order while preprocessing completion may reorder. Exposed input wait must have a matching later availability event, cannot overlap consumer compute, and cannot begin while its required input is already ready.
+- Tests: negative event JSON covers omitted consumer intervals, dequeue without execution, free before consumer completion, reversed frozen order, null identity, unmatched/duplicate intervals, reversed wait interval, fake wait during compute, and unsupported duration. Producer reorder with valid consumer ordering is accepted.
+- Result: **PASS** in targeted negative-oracle tests and full regression.
+
+### R3 — Logical work versus physical objects
+
+- Code: readiness depends on declared dependency IDs and their completion event IDs, not an operator-name constant. Occurrence execution is checked independently from object allocation/release. Multiple physical objects may belong to one occurrence; each keeps its own unique identity and lifetime. Temporary objects may release during a consumer interval; input objects may not release before consumer completion.
+- Tests: a non-default completion operator and a second temporary allocation for one occurrence validate successfully; missing dependency completion, duplicated logical execution, and leaked object are rejected.
+- Result: **PASS** in targeted tests and full regression.
+
+### R4 — Manifest, RNG, and run provenance binding
+
+- Code: manifest fields now have strict domains and finite weights. RNG material uses unambiguous canonical structured JSON and the explicit `hmac-sha256-canonical-json-tuple-v2` scheme version. Run context binds seed, manifest hash, workload version, draw/frame hashes, plan IDs, config hash, resources, Git commit, and dirty status. The trace validator re-computes draw/frame identity from the frozen manifest and checks actual consumer draw/frame evidence. Config workload version is checked against the manifest. Unsupported or disabled trace settings fail closed. Smoke creates a non-overwriting run directory first and retains `INVALID` provenance on failure. Trace and run-manifest JSON schemas were extended for the identity fields.
+- Tests: negative cases cover seed/draw mismatch, workload mismatch, manifest/context mismatch, mixed plan IDs, actual draw mismatch, invalid RNG scheme, NaN/Inf, empty workload version, NUL collision, disabled tracing, and failed-run provenance retention.
+- Result: **PASS** in targeted tests and full regression.
+
+### Verification artifacts
+
+- New evidence is under `artifacts/audits/r1_r4_fix/`; the previous milestone artifacts and first audit text remain intact.
+- `summary.md`, `negative_cases.json`, `trace_validation_results.json`, `provenance.json`, `test_results.txt`, `workload_manifest.jsonl`, `resolved_config.json`, and `audit_export_latest/` capture the final remediation run and checks. Earlier non-overwriting audit exports in the same folder are preserved.
+- Full suite at remediation verification: **61 passed, 0 failed, 0 skipped**. CLI `doctor`, `validate-config`, `validate-manifest`, `legality-check`, `smoke`, `validate-trace`, and `audit-export` passed. Trace validator re-check is stored separately so an existing validation record is not overwritten.
+- The four synthetic fixtures validate and end at zero live bytes/credits. Final smoke run `m2-r1r4-fix-final` has 46 events and passes the current trace validator; an intentionally removed input release is rejected as a leak. No real video, GPU training, or M3 physical plan was run.
+
+### Current gate and known limitations
+
+- **Sol re-audit gate: READY** — ready for the requested targeted Sol re-audit only. This is not `Sol approved` or `M3 approved`.
+- M3 has not started. No `D_repr_*`, `D_gran_*`, H1/H2/H3/H4, optimizer, or research mechanism was added.
+- PyTorch/CUDA remain absent or `UNKNOWN`; FFmpeg is unavailable; no real video workload or GPU training has run. These are capability limits, not evidence from M2.
+- The synthetic consumer models a single deterministic consumer with no alternate legal compute work. Real training stall attribution and instrumentation overhead still require validation at the appropriate later stage.

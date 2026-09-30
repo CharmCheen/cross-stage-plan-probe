@@ -25,3 +25,7 @@ trace:
   enabled: true
   format: jsonl
   level: full
+
+execution:
+  input_plan_id: synthetic
+  training_plan_id: consumer

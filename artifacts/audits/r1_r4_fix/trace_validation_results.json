@@ -1,0 +1,94 @@
+{
+  "fixtures": {
+    "A_no_backpressure": {
+      "errors": [],
+      "event_count": 42,
+      "terminal_credit_bytes": 0,
+      "terminal_item_bytes": 0,
+      "terminal_live_bytes": {
+        "gpu": 0,
+        "host": 0,
+        "pinned": 0
+      },
+      "valid": true
+    },
+    "B_byte_credit_block": {
+      "errors": [],
+      "event_count": 46,
+      "terminal_credit_bytes": 0,
+      "terminal_item_bytes": 0,
+      "terminal_live_bytes": {
+        "gpu": 0,
+        "host": 0,
+        "pinned": 0
+      },
+      "valid": true
+    },
+    "C_input_starvation": {
+      "errors": [],
+      "event_count": 46,
+      "terminal_credit_bytes": 0,
+      "terminal_item_bytes": 0,
+      "terminal_live_bytes": {
+        "gpu": 0,
+        "host": 0,
+        "pinned": 0
+      },
+      "valid": true
+    },
+    "D_overlapping_lifetimes": {
+      "errors": [],
+      "event_count": 42,
+      "terminal_credit_bytes": 0,
+      "terminal_item_bytes": 0,
+      "terminal_live_bytes": {
+        "gpu": 0,
+        "host": 0,
+        "pinned": 0
+      },
+      "valid": true
+    }
+  },
+  "intentional_leak": {
+    "errors": [
+      "event[19] credit returned before terminal release",
+      "event[19] reported_credit_bytes mismatch: reconstructed=70, reported=0",
+      "event[19] current_queue_bytes mismatch: reconstructed=70, reported=0",
+      "event[21] reported_credit_bytes mismatch: reconstructed=70, reported=0",
+      "event[21] current_queue_bytes mismatch: reconstructed=70, reported=0",
+      "event[22] reported host live bytes mismatch: reconstructed=120, reported=50/50",
+      "event[23] queue byte capacity exceeded",
+      "event[23] reported_credit_bytes mismatch: reconstructed=120, reported=50",
+      "event[23] current_queue_bytes mismatch: reconstructed=120, reported=50",
+      "event[28] reported_credit_bytes mismatch: reconstructed=120, reported=50",
+      "event[28] current_queue_bytes mismatch: reconstructed=120, reported=50",
+      "event[29] reported host live bytes mismatch: reconstructed=150, reported=80/80",
+      "event[30] queue byte capacity exceeded",
+      "event[30] reported_credit_bytes mismatch: reconstructed=150, reported=80",
+      "event[30] current_queue_bytes mismatch: reconstructed=150, reported=80",
+      "event[32] reported host live bytes mismatch: reconstructed=150, reported=80/80",
+      "event[33] reported_credit_bytes mismatch: reconstructed=150, reported=80",
+      "event[33] current_queue_bytes mismatch: reconstructed=150, reported=80",
+      "event[36] reported host live bytes mismatch: reconstructed=100, reported=30/30",
+      "event[37] reported_credit_bytes mismatch: reconstructed=100, reported=30",
+      "event[37] current_queue_bytes mismatch: reconstructed=100, reported=30",
+      "event[38] reported host live bytes mismatch: reconstructed=100, reported=30/30",
+      "event[39] reported_credit_bytes mismatch: reconstructed=100, reported=30",
+      "event[39] current_queue_bytes mismatch: reconstructed=100, reported=30",
+      "event[42] reported host live bytes mismatch: reconstructed=70, reported=0/0",
+      "event[43] reported_credit_bytes mismatch: reconstructed=70, reported=0",
+      "event[43] current_queue_bytes mismatch: reconstructed=70, reported=0",
+      "event[44] pipeline-end queue snapshots mismatch",
+      "event[44] pipeline-end live-byte snapshot mismatch",
+      "leaked live objects: ['obj-fixture-A-epoch0']",
+      "queue state not terminal: credits={'obj-fixture-A-epoch0': 70}, total=70, items={}",
+      "live-byte reconciliation failed: final={'host': 70, 'pinned': 0, 'gpu': 0}, expected={'host': 0, 'pinned': 0, 'gpu': 0}"
+    ],
+    "reconstructed_live_bytes": {
+      "gpu": 0,
+      "host": 70,
+      "pinned": 0
+    },
+    "valid": false
+  }
+}

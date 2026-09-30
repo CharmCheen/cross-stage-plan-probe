@@ -1,0 +1,137 @@
+{
+  "independent_oracle": "hand-mutated event JSON in tests; no production event-builder used to create invalid traces",
+  "negative_cases": [
+    {
+      "case": "R1-A",
+      "expected": "REJECTED",
+      "oracle": "admit A=70; dequeue A; return credit early while A live; admit B=50 under budget 100 before A release",
+      "test": "test_r1_a_early_credit_return_after_dequeue_fails"
+    },
+    {
+      "case": "R1-B",
+      "expected": "REJECTED",
+      "oracle": "release bytes differ from allocation bytes",
+      "test": "test_r1_release_fields_match_allocation[bytes]"
+    },
+    {
+      "case": "R1-C",
+      "expected": "REJECTED",
+      "oracle": "release resource layer differs from allocation layer",
+      "test": "test_r1_release_fields_match_allocation[device]"
+    },
+    {
+      "case": "R1-D",
+      "expected": "REJECTED",
+      "oracle": "duplicate credit return",
+      "test": "test_r1_duplicate_credit_return_fails"
+    },
+    {
+      "case": "R1-E",
+      "expected": "REJECTED",
+      "oracle": "all live-byte snapshots forged as zero",
+      "test": "test_r1_forged_live_snapshots_zero_fail"
+    },
+    {
+      "case": "R1-F",
+      "expected": "REJECTED",
+      "oracle": "dequeue falsely reports reduced credit",
+      "test": "test_r1_dequeue_cannot_reduce_reported_credit"
+    },
+    {
+      "case": "R1-G",
+      "expected": "ACCEPTED",
+      "oracle": "four valid A/B/C/D fixtures",
+      "test": "test_r1_all_four_reference_fixtures_reconcile"
+    },
+    {
+      "case": "R2-A/B",
+      "expected": "REJECTED",
+      "oracle": "remove consumer intervals or leave dequeue without execution",
+      "test": "test_r2_a_b_missing_consumer_execution_and_dequeue_only_fail"
+    },
+    {
+      "case": "R2-C",
+      "expected": "REJECTED",
+      "oracle": "free required input before consumer completion",
+      "test": "test_r2_c_release_before_consumer_end_fails"
+    },
+    {
+      "case": "R2-D/I",
+      "expected": "REJECTED / ACCEPTED",
+      "oracle": "reverse frozen consumer steps; separately reorder preprocessing with legal consumer order",
+      "test": "test_r2_d_reverse_consumer_steps_fail_but_producer_reorder_passes"
+    },
+    {
+      "case": "R2-E/F/G/H",
+      "expected": "REJECTED",
+      "oracle": "null ID, unmatched/reversed interval, fake wait during compute, unsupported duration",
+      "test": "test_r2_e_required_identity_null_fails; test_r2_f_g_h_fake_waits_fail; test_r2_interval_pairing_fails_closed"
+    },
+    {
+      "case": "R3-A/B",
+      "expected": "ACCEPTED",
+      "oracle": "non-fixed completion operator; two physical allocations for one occurrence",
+      "test": "test_r3_a_generic_dependency_operator_name_and_multiple_objects"
+    },
+    {
+      "case": "R3-C/D/E",
+      "expected": "REJECTED",
+      "oracle": "missing dependency, duplicate logical execution, leaked physical object",
+      "test": "test_r3_c_dependency_missing_d_duplicate_logical_work_e_leak_fail"
+    },
+    {
+      "case": "R4-A/C/E",
+      "expected": "REJECTED",
+      "oracle": "seed/draw identity, expected manifest hash, mixed plan ID",
+      "test": "test_r4_seed_workload_hash_and_plan_bindings"
+    },
+    {
+      "case": "R4-F/G",
+      "expected": "REJECTED",
+      "oracle": "NaN/Inf weight and empty workload version",
+      "test": "test_r4_f_nonfinite_weight_rejected; test_r4_g_empty_workload_version_rejected"
+    },
+    {
+      "case": "R4-H",
+      "expected": "DISTINCT",
+      "oracle": "distinct logical RNG tuples containing NUL",
+      "test": "test_r4_h_structured_rng_encoding_eliminates_nul_collision"
+    },
+    {
+      "case": "R4-I",
+      "expected": "CONFIG ERROR",
+      "oracle": "trace.enabled=false",
+      "test": "test_r4_i_disabled_trace_is_explicitly_unsupported"
+    },
+    {
+      "case": "R1-credit-bytes",
+      "expected": "REJECTED",
+      "oracle": "credit return byte count differs from admitted object bytes",
+      "test": "test_r1_credit_return_bytes_must_equal_admitted_bytes"
+    },
+    {
+      "case": "R1-unknown-credit",
+      "expected": "REJECTED",
+      "oracle": "credit return for an object never admitted",
+      "test": "test_r1_unknown_credit_return_fails_closed"
+    },
+    {
+      "case": "R2-interval-pairing",
+      "expected": "REJECTED",
+      "oracle": "duplicate start, missing end, and unmatched interval end",
+      "test": "test_r2_interval_pairing_fails_closed"
+    },
+    {
+      "case": "R4-scheme",
+      "expected": "REJECTED",
+      "oracle": "unsupported RNG scheme in run context/manifest",
+      "test": "test_r4_rng_scheme_mismatch_in_context_fails"
+    },
+    {
+      "case": "R4-actual-draw",
+      "expected": "REJECTED",
+      "oracle": "actual consumer draw differs from keyed manifest/seed draw",
+      "test": "test_r4_seed_workload_hash_and_plan_bindings"
+    }
+  ]
+}

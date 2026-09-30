@@ -1,0 +1,106 @@
+{
+  "audit_export": "audit_export_latest/",
+  "base_commit": "cdc18721c5a693b355ccd602b2987366bfcb4010",
+  "branch": "main",
+  "capture_stage": "pre-commit remediation verification",
+  "environment": {
+    "captured_at_utc": "2026-09-30T05:43:14.762492+00:00",
+    "cpu": {
+      "logical_cores": 16,
+      "model": "AMD Ryzen 7 5800H with Radeon Graphics         ",
+      "physical_cores": 8,
+      "physical_cores_reason": "physical core count unavailable"
+    },
+    "cuda_available": "UNKNOWN",
+    "cuda_runtime_version": "UNKNOWN",
+    "ffmpeg": {
+      "available": false,
+      "reason": "[WinError 2] \u7cfb\u7edf\u627e\u4e0d\u5230\u6307\u5b9a\u7684\u6587\u4ef6\u3002",
+      "version": "UNKNOWN"
+    },
+    "git": {
+      "available": true,
+      "branch": "main",
+      "branch_reason": null,
+      "commit": "cdc18721c5a693b355ccd602b2987366bfcb4010",
+      "commit_reason": null,
+      "dirty": true,
+      "origin": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+      "origin_reason": null,
+      "root": "D:/FDU/Experiment/cross-stage-plan-probe",
+      "root_reason": null,
+      "status_reason": null
+    },
+    "gpu": {
+      "count": 1,
+      "devices": [
+        {
+          "model": "NVIDIA GeForce RTX 3050 Laptop GPU",
+          "vram_mib": 4096
+        }
+      ],
+      "query_reason": null
+    },
+    "kernel": "11",
+    "os": {
+      "machine": "AMD64",
+      "release": "11",
+      "system": "Windows",
+      "version": "10.0.26200"
+    },
+    "python": {
+      "executable": "D:\\anaconda3\\python.exe",
+      "version": "3.13.9"
+    },
+    "pytorch_reason": "PyTorch is not installed (optional at M0\u2013M2)",
+    "pytorch_version": "UNKNOWN",
+    "ram_reason": null,
+    "ram_total_bytes": 14877257728,
+    "schema_version": "1.0",
+    "storage": {
+      "filesystem": "NTFS",
+      "filesystem_reason": null,
+      "free_bytes": 98640531456,
+      "path": "D:\\FDU\\Experiment\\cross-stage-plan-probe",
+      "total_bytes": 294971764736
+    }
+  },
+  "final_smoke_run_id": "m2-r1r4-fix-final",
+  "final_trace_validation": "PASS",
+  "full_pytest": "61 passed, 0 failed, 0 skipped",
+  "git_dirty_during_capture": true,
+  "remote_origin": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+  "repository": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+  "smoke_event_count": 46,
+  "smoke_final_live_bytes": {
+    "gpu": 0,
+    "host": 0,
+    "pinned": 0
+  },
+  "smoke_run_context": {
+    "draws_hash": "237dd63f9c80404ab0e87bb0c2525321d02805bcf483e9e80615821f70efb0b4",
+    "frame_ids_hash": "df6e47c912dbc839404525e436b83e91c5f6aee5ff3b15bf09db300889ec41df",
+    "git_commit": "cdc18721c5a693b355ccd602b2987366bfcb4010",
+    "git_dirty": true,
+    "input_plan_id": "synthetic",
+    "manifest_hash": "1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a",
+    "resolved_config_hash": "eba081badb20eb2bde07445ff3f276daf1666249bf19ea120da208cdcf25d94f",
+    "resources": {
+      "cpu_threads": 1,
+      "gpu_memory_budget_bytes": 0,
+      "host_memory_budget_bytes": 1048576,
+      "pinned_memory_budget_bytes": 0,
+      "queue_byte_budget": 100
+    },
+    "rng_scheme_version": "hmac-sha256-canonical-json-tuple-v2",
+    "run_context_hash": "4429c00cf7993c854131f4426934b9452aa73ebcce10aff8f9f163e081f38826",
+    "run_id": "m2-r1r4-fix-final",
+    "seed": 20260930,
+    "training_plan_id": "consumer",
+    "work_identity_hash": "b24c3f41a54d1ccfc894b022505310af13dc281d2e30ed2dda1a38194cc43167",
+    "workload_version": "fixture-v1"
+  },
+  "smoke_run_id": "m2-r1r4-fix-final",
+  "smoke_status": "VALID",
+  "smoke_trace_validation": "PASS"
+}

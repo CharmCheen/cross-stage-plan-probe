@@ -5,12 +5,15 @@
   "required": [
     "run_id",
     "git_commit",
+    "status",
+    "valid",
     "config_hash",
     "manifest_hash",
     "plan_d",
     "plan_t",
     "seed",
-    "resources"
+    "resources",
+    "failure_reason"
   ],
   "properties": {
     "run_id": {
@@ -31,9 +34,12 @@
     "plan_t": {
       "type": "string"
     },
-    "seed": {
-      "type": "integer"
-    },
+    "seed": {"type": ["integer", "null"]},
+    "status": {"type": "string", "enum": ["PREFLIGHT", "RUNNING", "VALID", "INVALID"]},
+    "rng_scheme_version": {"type": "string", "minLength": 1},
+    "workload_version": {"type": "string", "minLength": 1},
+    "run_context": {"type": "object"},
+    "failure_reason": {"type": ["string", "null"]},
     "resources": {
       "type": "object"
     },
@@ -53,5 +59,11 @@
       ]
     }
   },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "VALID"}}, "required": ["status"]},
+      "then": {"required": ["rng_scheme_version", "workload_version", "run_context"]}
+    }
+  ],
   "additionalProperties": true
 }

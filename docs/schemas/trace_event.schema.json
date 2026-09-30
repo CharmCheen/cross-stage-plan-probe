@@ -3,13 +3,20 @@
   "title": "CSPP Trace Event",
   "type": "object",
   "required": [
+    "event_id",
     "run_id",
     "ts_ns",
     "event_type",
+    "run_context_hash",
+    "manifest_hash",
+    "input_plan_id",
+    "training_plan_id",
     "plan_d",
-    "plan_t"
+    "plan_t",
+    "metadata"
   ],
   "properties": {
+    "event_id": {"type": "string", "minLength": 1},
     "run_id": {
       "type": "string"
     },
@@ -20,6 +27,10 @@
     "event_type": {
       "type": "string"
     },
+    "run_context_hash": {"type": "string", "minLength": 1},
+    "manifest_hash": {"type": "string", "minLength": 1},
+    "input_plan_id": {"type": "string", "minLength": 1},
+    "training_plan_id": {"type": "string", "minLength": 1},
     "plan_d": {
       "type": "string"
     },
