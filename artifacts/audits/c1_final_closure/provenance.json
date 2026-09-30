@@ -2,7 +2,7 @@
   "repository": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
   "branch": "main",
   "base_commit": "3493e4de8e86140512bc965fed0c2e8ce5f1504c",
-  "implementation_commit": "PRE-COMMIT",
+  "implementation_commit": "ebcf316f24aa656509286ae2f91572cb6e4aeb1c",
   "cli_base_commit": "3493e4de8e86140512bc965fed0c2e8ce5f1504c",
   "cli_source_overlay": [
     "src/cspp/tracing/trace.py",
@@ -38,5 +38,6 @@
   "source_overlay_sha256": {
     "src/cspp/tracing/trace.py": "6a88b4090a7fb26e61154028d707cad8e3511fa9f73f4b637a9f19f95f28c95b",
     "src/cspp/tracing/validator.py": "c44fdcfb5dd945c9813908a9efaf95498eca86e3943f82f2138be34c8aa6211b"
-  }
+  },
+  "provenance_note": "Implementation SHA recorded in this follow-up metadata commit. Final HEAD and origin/main equality are verified after normal push and reported in the task result; no recursive self-SHA update."
 }

@@ -282,3 +282,5 @@ The previous closure re-audit verdict remains `APPROVE_WITH_REQUIRED_FIXES` / `E
 - **Artifacts:** `artifacts/audits/c1_final_closure/` contains replay, controls, test logs, current trace/validation, environment/config, export, and provenance. Implementation SHA is recorded in the subsequent provenance metadata commit.
 - **Final C1 closure re-audit gate: READY** — pending Sol's C1-only closure re-audit.
 - M3 has not started. No real video/backend, PyTorch/CUDA, GPU execution, or research mechanism was added. Existing capability limitations remain unchanged.
+
+C1 implementation commit: `ebcf316f24aa656509286ae2f91572cb6e4aeb1c`. This follow-up provenance commit records the implementation identity; final main HEAD is verified against origin/main after push.
