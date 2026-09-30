@@ -1,0 +1,12 @@
+{
+  "current_schema_cli_smoke": {
+    "run_id": "rf-final-a736b6557f93",
+    "valid": true,
+    "errors": [],
+    "event_count": 46,
+    "final_live_bytes": {"host": 0, "pinned": 0, "gpu": 0}
+  },
+  "validate_trace_cli": "PASS",
+  "audit_export_cli": "PASS",
+  "historical_fixtures": "Retained unchanged as historical M2 evidence; current-schema validity is independently covered by the hand-built positive matrix and this CLI smoke run."
+}

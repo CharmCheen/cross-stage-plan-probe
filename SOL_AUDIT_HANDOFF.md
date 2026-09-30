@@ -139,3 +139,70 @@ This section is an additive remediation record. The first M0–M2 Sol audit find
 - M3 has not started. No `D_repr_*`, `D_gran_*`, H1/H2/H3/H4, optimizer, or research mechanism was added.
 - PyTorch/CUDA remain absent or `UNKNOWN`; FFmpeg is unavailable; no real video workload or GPU training has run. These are capability limits, not evidence from M2.
 - The synthetic consumer models a single deterministic consumer with no alternate legal compute work. Real training stall attribution and instrumentation overhead still require validation at the appropriate later stage.
+
+## RF1–RF6 final validator convergence
+
+This section records the third M0–M2 hardening round. Earlier M0–M2 implementation notes, the first and second Sol audit findings, and `artifacts/audits/r1_r4_fix/` remain preserved. The changes are engineering-only and do not approve M3.
+
+### RF1 — Dependency causal roots
+
+- Problem: a dependency completion could be self-referenced or tied to an otherwise unbound completion event.
+- State-machine fix: `TraceStateMachine` only accepts previously validated, closed completion roots; root event identity includes the dependency ID and kind, occurrence, run, sample, step, microbatch, and physical object. Synthetic producer intervals now carry their declared dependency identity.
+- Negative tests: self, forward, cyclic, missing, foreign occurrence/object, and dependency identity mismatch.
+- Positive tests: arbitrary operator names, producer reorder, and multiple dependencies.
+- Result: **PASS** in adversarial tests and full regression.
+
+### RF2 — Typed interval pairing and lifecycle
+
+- Problem: interval ends could cross event types/identities, closed IDs could be reused, and consumer compute overlaps were not globally rejected.
+- State-machine fix: interval IDs are permanent; start/end types and identities are paired; observed duration must equal the monotonic timestamp delta; closed compute intervals are checked for global overlap.
+- Negative tests: cross-type/occurrence/step pairing, reused IDs, duplicate/unmatched/missing endpoints, and overlapping consumer compute intervals.
+- Positive tests: correctly paired producer, consumer, wait, and queue-block intervals in hand-built and runtime traces.
+- Result: **PASS**.
+
+### RF3 — Consumer timeline, readiness, and exposed wait
+
+- Problem: waits and consumer readiness could rely on self-reported status or timestamps.
+- State-machine fix: full compute and wait intervals are checked after replay; waits must be for the next frozen occurrence, outside every compute interval, and causally terminate at that occurrence's later input admission. Consumer ready timestamps are reconstructed from the `ready` event.
+- Negative tests: fake critical dependency, wrong/before availability, waits overlapping compute, missing readiness, and future/past ready timestamp mutations.
+- Positive tests: a hand-built wait with the matching later admission and reconstructed readiness.
+- Result: **PASS** for the declared single-consumer synthetic model.
+
+### RF4 — Ownership transition and consumer access
+
+- Problem: ownership transfer could alter immutable fields/snapshots, and consumers could access foreign, released, or producer-only objects.
+- State-machine fix: each object has independent bytes/layer/role/occurrence/current owner/lifetime; transfer checks the current owner and preserves immutable fields; allocation-time `readable_by` or current consumer ownership is required for access. Snapshots are independently reconstructed.
+- Negative tests: wrong transfer bytes/layer/owner, forged live/credit snapshots, producer-only access, foreign/released object, and wrong role.
+- Positive tests: queue-to-consumer ownership transfer followed by valid consumer access.
+- Result: **PASS**.
+
+### RF5 — Multi-input consumer semantics
+
+- Problem: consumer validation treated a primary object as the only input.
+- State-machine fix: consumer execution declares `input_object_ids`; each input is checked independently for unique identity, occurrence, role, admission/dequeue, liveness, access, and lifetime. Multiple physical objects remain distinct from one logical occurrence.
+- Negative tests: foreign occurrence, duplicate input, pre-completion release, missing dequeue, and wrong role.
+- Positive tests: one, two, or three inputs, plus multiple inputs and a temporary object with early release.
+- Result: **PASS**.
+
+### RF6 — Full-run validator API contract
+
+- Problem: callers could validate terminal fragments or omit frozen workload/run identity.
+- State-machine fix: the public `validate_trace()` full-run path requires both non-empty `expected_occurrences` and `expected_run_context`; run ID is taken from the context and every event is context-bound. A terminal-only trace cannot satisfy required occurrence completion.
+- Negative tests: missing manifest, terminal-only run, foreign run/context, mixed plan, partial workload, and duplicate logical execution.
+- Positive tests: full hand-built workload and current CLI smoke run.
+- Result: **PASS**.
+
+### State-machine and verification evidence
+
+- Engineering contract: `docs/TRACE_VALIDATOR_STATE_MACHINE.md`.
+- New independent adversarial module: `tests/adversarial/test_trace_state_machine.py`; 54 pytest cases collected, including deterministic single-mutation classes and manually constructed event dictionaries that do not use the runtime queue/ledger/pipeline to produce their input traces.
+- Full pytest: **115 passed, 0 failed, 0 skipped**.
+- CLI doctor, validate-config, validate-manifest, legality-check, smoke, validate-trace, and audit-export all passed in an isolated clone. Current-schema smoke produced 46 events, validated with no errors, and ended with zero host/pinned/GPU live bytes. Evidence is under `artifacts/audits/rf1_rf6_final/`; earlier milestone and remediation evidence was not rewritten.
+- Implementation base: `e0d32755aa85abb598f03299d945b7c26d897fb7`. The implementation and evidence commits are recorded in Git history after commit.
+
+### Current gate and boundaries
+
+- **Sol targeted re-audit gate: READY** — ready for the third targeted Sol re-audit only. This is not `APPROVED`, `ENGINEERING_READY_FOR_M3`, or `M3 approved`.
+- M3 has not started. No `D_repr_*`, `D_gran_*`, H1/H2/H3/H4, optimizer, or other research mechanism was added.
+- PyTorch remains absent; CUDA runtime remains `UNKNOWN`; FFmpeg is unavailable; no real video workload or GPU training has run. These limitations remain disclosed and unchanged.
+- The synthetic consumer remains a single frozen-order consumer; this round makes no claim about real training alternate-work attribution or instrumentation overhead.

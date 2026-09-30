@@ -116,7 +116,7 @@ def test_fixture_case_c_exposes_input_starvation(config, records):
     events = run_synthetic_pipeline(config, records, "case-c-input-starvation")["events"]
     waits = [e for e in events if e["event_type"] == "consumer_wait_end"]
     assert waits
-    assert all(e["metadata"]["critical_dependency"] == "input_readiness" for e in waits)
+    assert all(e["metadata"]["critical_dependency"] == "input_admission" for e in waits)
     assert all(e["metadata"]["duration_ns"] > 0 for e in waits)
 
 

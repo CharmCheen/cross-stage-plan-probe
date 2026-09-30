@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+  "branch": "main",
+  "base_commit": "e0d32755aa85abb598f03299d945b7c26d897fb7",
+  "source_commit_at_test_time": "working-tree changes based on base_commit; implementation commit is assigned when committed",
+  "working_tree_dirty_at_test_time": true,
+  "cli_run_id": "rf-final-a736b6557f93",
+  "run_context_hash": "d84fceb8c585b4c5c6c8701bf0fe733eb487a0257ab373c08756751f58445f22",
+  "manifest_hash": "1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a",
+  "resolved_config_sha256": "eba081badb20eb2bde07445ff3f276daf1666249bf19ea120da208cdcf25d94f",
+  "test_results": {"passed": 115, "failed": 0, "skipped": 0, "adversarial_cases_collected": 54},
+  "capability_limits": ["PyTorch absent", "CUDA runtime UNKNOWN", "FFmpeg unavailable", "No real video workload", "No GPU training"]
+}

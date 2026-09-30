@@ -1,0 +1,14 @@
+{
+  "count": 8,
+  "oracle": "Independent hand-built trace; every valid scenario asserts validate_trace errors == []",
+  "cases": [
+    {"case": "single input per occurrence", "result": "VALID"},
+    {"case": "two input objects for one occurrence", "result": "VALID"},
+    {"case": "three input objects for one occurrence", "result": "VALID"},
+    {"case": "multiple inputs plus temporary object released early", "result": "VALID"},
+    {"case": "multiple causal dependencies", "result": "VALID"},
+    {"case": "preprocessing order reversed while frozen consumer order is retained", "result": "VALID"},
+    {"case": "arbitrary producer/operator name", "result": "VALID"},
+    {"case": "causally paired input wait ending at relevant input admission", "result": "VALID"}
+  ]
+}

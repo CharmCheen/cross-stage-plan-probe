@@ -1,0 +1,39 @@
+{
+  "source": "tests/adversarial/test_trace_state_machine.py; event dictionaries are manually constructed or independently mutated; no runtime queue, ledger, or pipeline generates attack inputs",
+  "expected": "reject the full run with explicit validator errors",
+  "attack_case_count": 58,
+  "groups": {
+    "RF1_dependency_roots": [
+      "self-reference", "forward-reference", "two-node-cycle", "missing-producer-root",
+      "foreign-occurrence-root", "wrong-object-root", "declared-dependency-id-or-kind-mismatch"
+    ],
+    "RF2_typed_intervals": [
+      "cross-type-pairing-consumer", "cross-type-pairing-operator", "cross-occurrence-pair",
+      "cross-step-pair", "reuse-closed-interval-id", "duplicate-start", "duplicate-end",
+      "unmatched-end", "missing-end", "overlapping-consumer-compute"
+    ],
+    "RF3_readiness_and_wait": [
+      "fake-critical-dependency", "future-ready-time", "past-ready-time", "wrong-occurrence-availability",
+      "availability-before-wait", "missing-ready-event", "wait-overlaps-compute"
+    ],
+    "RF4_ownership_and_access": [
+      "wrong-transfer-bytes", "wrong-transfer-layer", "wrong-old-owner", "forged-live-snapshot",
+      "forged-credit-snapshot", "producer-only-consumer-access", "foreign-object-access",
+      "released-object-access", "wrong-input-role"
+    ],
+    "RF5_multi_input": [
+      "foreign-occurrence-input", "duplicate-input-id", "input-release-before-consumer-end",
+      "input-not-dequeued", "wrong-input-role"
+    ],
+    "RF6_full_run_contract": [
+      "missing-expected-manifest", "terminal-only-run", "foreign-run-id", "foreign-context-hash",
+      "mixed-plan-id", "partial-occurrence-set", "duplicate-logical-execution"
+    ],
+    "deterministic_mutation_campaign": [
+      "delete-event", "duplicate-event", "swap-event-order", "replace-occurrence-id",
+      "replace-object-id", "replace-interval-id", "replace-run-id", "replace-dependency-reference",
+      "replace-owner", "replace-bytes", "replace-resource-layer", "replace-ready-timestamp", "replace-plan-id"
+    ]
+  },
+  "result": "PASS; all negative cases assert rejection"
+}

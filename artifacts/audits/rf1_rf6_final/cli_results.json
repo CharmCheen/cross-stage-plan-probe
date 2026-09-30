@@ -1,0 +1,37 @@
+[
+  {
+    "command": "doctor --config configs/m0_m2.local.yaml",
+    "exit_code": 0,
+    "output": "{\r\n  \"environment\": \"artifacts/environment.json\",\r\n  \"git\": {\r\n    \"available\": true,\r\n    \"root\": \"C:/Users/12914/AppData/Local/Temp/cspp-rf-audit-3a6c3895c4a04b8ab3d55b4ba0960cb2\",\r\n    \"root_reason\": null,\r\n    \"commit\": \"e0d32755aa85abb598f03299d945b7c26d897fb7\",\r\n    \"commit_reason\": null,\r\n    \"branch\": \"main\",\r\n    \"branch_reason\": null,\r\n    \"origin\": \"D:/FDU/Experiment/cross-stage-plan-probe/.\",\r\n    \"origin_reason\": null,\r\n    \"dirty\": true,\r\n    \"status_reason\": null\r\n  }\r\n}\r\n"
+  },
+  {
+    "command": "validate-config --config configs/m0_m2.local.yaml",
+    "exit_code": 0,
+    "output": "VALID C:\\Users\\12914\\AppData\\Local\\Temp\\cspp-rf-audit-3a6c3895c4a04b8ab3d55b4ba0960cb2\\configs\\m0_m2.local.yaml -> artifacts\\resolved_configs\\m0_m2.local.json\r\n"
+  },
+  {
+    "command": "validate-manifest --manifest data/manifests/e1.jsonl",
+    "exit_code": 0,
+    "output": "{\r\n  \"valid\": true,\r\n  \"occurrences\": 3,\r\n  \"manifest_hash\": \"1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a\"\r\n}\r\n"
+  },
+  {
+    "command": "legality-check --config configs/m0_m2.local.yaml",
+    "exit_code": 0,
+    "output": "{\r\n  \"valid\": true,\r\n  \"errors\": [],\r\n  \"sample_manifest_hash\": \"1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a\",\r\n  \"transform_draws_hash\": \"237dd63f9c80404ab0e87bb0c2525321d02805bcf483e9e80615821f70efb0b4\",\r\n  \"frame_ids_hash\": \"df6e47c912dbc839404525e436b83e91c5f6aee5ff3b15bf09db300889ec41df\",\r\n  \"rng_scheme_version\": \"hmac-sha256-canonical-json-tuple-v2\",\r\n  \"occurrence_count\": 3,\r\n  \"seed\": 20260930\r\n}\r\n"
+  },
+  {
+    "command": "smoke --config configs/m0_m2.local.yaml --run-id rf-final-5fb8eedce7ef",
+    "exit_code": 0,
+    "output": "{\r\n  \"valid\": true,\r\n  \"run_id\": \"rf-final-5fb8eedce7ef\",\r\n  \"trace\": \"C:\\\\Users\\\\12914\\\\AppData\\\\Local\\\\Temp\\\\cspp-rf-audit-3a6c3895c4a04b8ab3d55b4ba0960cb2\\\\artifacts\\\\runs\\\\rf-final-5fb8eedce7ef\\\\trace.jsonl\",\r\n  \"events\": 46,\r\n  \"final_live_bytes\": {\r\n    \"host\": 0,\r\n    \"pinned\": 0,\r\n    \"gpu\": 0\r\n  }\r\n}\r\n"
+  },
+  {
+    "command": "validate-trace --run rf-final-5fb8eedce7ef --config configs/m0_m2.local.yaml",
+    "exit_code": 0,
+    "output": "{\r\n  \"valid\": true,\r\n  \"errors\": [],\r\n  \"events\": 46\r\n}\r\n"
+  },
+  {
+    "command": "audit-export --run rf-final-5fb8eedce7ef --out artifacts/audits/rf1_rf6_final/audit_export",
+    "exit_code": 0,
+    "output": "exported rf-final-5fb8eedce7ef -> C:\\Users\\12914\\AppData\\Local\\Temp\\cspp-rf-audit-3a6c3895c4a04b8ab3d55b4ba0960cb2\\artifacts\\audits\\rf1_rf6_final\\audit_export\r\n"
+  }
+]

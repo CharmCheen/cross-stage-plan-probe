@@ -1,0 +1,8 @@
+{
+  "pytest_cases_collected": 54,
+  "deterministic_single_mutation_classes": 13,
+  "independent_hand_built_rejection_scenarios": 58,
+  "result": "PASS",
+  "independent_oracle": "Hand-authored JSON event dictionaries and deep-copied single-point mutations. The adversarial module does not call run_synthetic_pipeline, ByteCreditQueue, LiveByteLedger, or production validator state-machine helpers to construct its input traces.",
+  "assertion_policy": "Each negative scenario asserts that validate_trace returns one or more errors; the positive-control matrix asserts an empty error list."
+}
