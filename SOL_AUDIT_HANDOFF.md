@@ -198,7 +198,7 @@ This section records the third M0–M2 hardening round. Earlier M0–M2 implemen
 - New independent adversarial module: `tests/adversarial/test_trace_state_machine.py`; 54 pytest cases collected, including deterministic single-mutation classes and manually constructed event dictionaries that do not use the runtime queue/ledger/pipeline to produce their input traces.
 - Full pytest: **115 passed, 0 failed, 0 skipped**.
 - CLI doctor, validate-config, validate-manifest, legality-check, smoke, validate-trace, and audit-export all passed in an isolated clone. Current-schema smoke produced 46 events, validated with no errors, and ended with zero host/pinned/GPU live bytes. Evidence is under `artifacts/audits/rf1_rf6_final/`; earlier milestone and remediation evidence was not rewritten.
-- Implementation base: `e0d32755aa85abb598f03299d945b7c26d897fb7`. The implementation and evidence commits are recorded in Git history after commit.
+- Validator implementation and initial evidence commit: `0a378abf13e8a702eb7d8eef4b73e24518c986bc` (based on `e0d32755aa85abb598f03299d945b7c26d897fb7`). The provenance/handoff metadata update follows this implementation commit in Git history.
 
 ### Current gate and boundaries
 
