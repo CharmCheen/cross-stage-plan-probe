@@ -1,6 +1,7 @@
 {
   "audit_export": "audit_export_latest/",
   "base_commit": "cdc18721c5a693b355ccd602b2987366bfcb4010",
+  "remediation_implementation_commit": "8efb45be3b732cd3456740bc71bef4519e1ba387",
   "branch": "main",
   "capture_stage": "pre-commit remediation verification",
   "environment": {
