@@ -5,13 +5,15 @@ Scope is complete through M2. Stop here. Do not begin M3 until GPT-6.1 Sol has r
 ## Repository state
 
 - Workspace: `D:\FDU\Experiment\cross-stage-plan-probe`
-- Repository: `https://github.com/CharmCheen/cross-stage-plan-probe`
-- Branch: `main`; origin verified; remote has no refs/commits after fetch.
-- Commit hash: `PRE-COMMIT`; the initialized repository has no HEAD yet. No SHA is fabricated.
+- Branch: `main`; origin verified; remote had no refs/commits after fetch.
+- Repository: `https://github.com/CharmCheen/cross-stage-plan-probe.git`.
+- Audited implementation commit: `2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce` (`bootstrap M0-M2 experiment harness`).
+- Handoff metadata commit: pending; this handoff update will be committed separately after the implementation commit.
+- Push: pending.
 - Sol gate: **READY** for M0–M2 audit; this is not an approval. M3 has not started.
-- Git status: all project files are staged for the first commit; generated `.egg-info` and Python caches are ignored and removed from the index. `git diff --cached --check` is clean.
+- Git status at implementation commit: clean. Generated `.egg-info` and Python caches are ignored and absent from the index. The repository uses canonical LF text endings; staged whitespace check passed.
 - Historical provenance: M0–M2 were initially completed before this directory had Git metadata. The user then initialized Git; this task verified the origin and refreshed the M0 environment provenance. The original UNKNOWN snapshot is retained in historical M2 run manifests and explained here.
-- Initial `git status`, branch, and log commands failed at task start as recorded in `BLOCKERS.md`; the blocker is now RESOLVED. No original `docs/` pack file was edited.
+- Initial `git status`, branch, and log commands failed at task start as recorded in `BLOCKERS.md`; the blocker is now RESOLVED after repository initialization, provenance capture, and first commit. No original `docs/` pack file was edited.
 - Exact file inventory: `artifacts/milestones/file_inventory.json` (excludes the unchanged original `docs/` pack and test-generated caches).
 - User-scope note: the pack's machine DAG marks M0 as requiring a Sol audit, while the latest explicit user instruction authorized M0→M1→M2 and requested the first Sol handoff after M2. The pack's `19_SOURCE_OF_TRUTH.md` places latest explicit user instructions first. This execution followed that scope and discloses the gate status here.
 
@@ -33,11 +35,11 @@ Scope is complete through M2. Stop here. Do not begin M3 until GPT-6.1 Sol has r
 
 - Status: COMPLETE.
 - Python: 3.13.9 on Windows 11; project requires Python 3.11+.
-- Environment: AMD Ryzen 7 5800H, 16 logical / 8 physical cores, 14,877,257,728 RAM bytes; NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB. PyTorch absent, so CUDA availability and runtime are `UNKNOWN`. FFmpeg is unavailable. Storage is NTFS with 103,655,211,008 bytes free at the final pre-commit probe.
+- Environment: AMD Ryzen 7 5800H, 16 logical / 8 physical cores, 14,877,257,728 RAM bytes; NVIDIA GeForce RTX 3050 Laptop GPU, 4096 MiB. PyTorch absent, so CUDA availability and runtime are `UNKNOWN`. FFmpeg is unavailable. Storage is NTFS; see the dated environment artifact for free space at probe time.
 - Dependencies: editable install succeeded; PyYAML 6.0.3 and pytest 8.4.2 were already installed. No video, training, optimizer, distributed, or GPU package was installed.
 - Checks: 5 M0 unit tests passed; full suite 31 passed. Doctor and config validation commands passed. Resolved config and environment JSON/Markdown were generated.
 - The first pre-install full test attempt had 1 CLI subprocess import failure and 21 passes; after the documented editable install, all reruns passed. See M0 `test_results.txt`.
-- Refreshed provenance: `artifacts/environment.json` records the initialized `main` worktree, verified origin, dirty staged state, and `PRE-COMMIT`; its original pre-Git snapshot is documented in `BLOCKERS.md`.
+- Refreshed provenance: `artifacts/environment.json` records implementation commit `2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce`, `main`, verified origin, and a clean worktree at probe time. The original pre-Git snapshot is documented in `BLOCKERS.md`.
 
 ## M1 — Legality/reproducibility
 
@@ -66,7 +68,7 @@ Scope is complete through M2. Stop here. Do not begin M3 until GPT-6.1 Sol has r
 
 ## Known limitations / UNKNOWN / BLOCKER / not implemented
 
-- `BLOCKERS.md`: historical Git absence is RESOLVED. The repository is valid and provenance is available; first commit and push are pending.
+- `BLOCKERS.md`: historical Git absence is RESOLVED. The repository is valid and provenance is available; the first commit exists. Push is pending until this handoff metadata is committed.
 - PyTorch/CUDA runtime and FFmpeg are unavailable/UNKNOWN; no real video or GPU workload was run.
 - Synthetic fixture only; there is no decoder, training framework, model, distributed execution, rank/barrier stall attribution, or native pinned/GPU allocator instrumentation.
 - Tracing overhead is a local diagnostic, not a plan-dependent overhead assessment.

@@ -10,9 +10,8 @@ M0–M2 reviewability (non-semantic repository limitation)
 
 At M0 task start, the supplied workspace path had no `.git` directory and was not within a Git
 worktree. Initial `git status`, `git branch --show-current`, and `git log -5 --oneline` failed, so
-the original environment snapshot recorded Git commit and dirty state as `UNKNOWN`. The user later
-initialized the repository. The first commit is pending, so current commit provenance is
-`PRE-COMMIT`; branch and origin are now known. The initial staged diff is available for review.
+the original environment snapshot recorded Git commit and dirty state as `UNKNOWN`. The user initialized Git; `origin` was verified, the branch is `main`, and the first commit is
+`2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce`. Repository provenance is now available. The initial staged diff was reviewed before commit.
 
 ## Why this affects research semantics or validity
 
@@ -26,13 +25,11 @@ implementation and artifact files are listed in `artifacts/milestones/file_inven
 - `git branch --show-current`: fatal, not a git repository.
 - `git log -5 --oneline`: fatal, not a git repository.
 - Initial environment snapshot: Git fields were `UNKNOWN` because no repository existed.
-- Refreshed M0 environment snapshot: Git worktree available, branch `main`, origin verified, commit `PRE-COMMIT` because no commit existed yet.
+- Refreshed M0 environment snapshot: Git worktree available, branch `main`, origin verified, implementation commit `2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce`, and clean at probe time.
 
 ## Safe options (do not choose one without approval if semantics differ)
 
-The repository owner initialized Git. Sol can review the staged initial diff and the exact file
-inventory. No history was invented; the first commit is being created on `main` against an empty
-remote.
+Resolved after user initialized the repository and remote provenance was verified. The initial commit was created on `main` against an empty remote; no prior history was overwritten.
 
 ## Work that can continue independently
 

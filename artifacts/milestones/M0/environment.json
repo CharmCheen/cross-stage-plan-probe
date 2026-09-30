@@ -1,5 +1,5 @@
 {
-  "captured_at_utc": "2026-09-30T03:59:03.229714+00:00",
+  "captured_at_utc": "2026-09-30T04:03:27.443948+00:00",
   "cpu": {
     "logical_cores": 16,
     "model": "AMD Ryzen 7 5800H with Radeon Graphics         ",
@@ -17,9 +17,9 @@
     "available": true,
     "branch": "main",
     "branch_reason": null,
-    "commit": "PRE-COMMIT",
-    "commit_reason": "Git worktree exists but has no HEAD commit at probe time",
-    "dirty": true,
+    "commit": "2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce",
+    "commit_reason": null,
+    "dirty": false,
     "origin": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
     "origin_reason": null,
     "root": "D:/FDU/Experiment/cross-stage-plan-probe",
@@ -55,7 +55,7 @@
   "storage": {
     "filesystem": "NTFS",
     "filesystem_reason": null,
-    "free_bytes": 103655211008,
+    "free_bytes": 103547359232,
     "path": "D:\\FDU\\Experiment\\cross-stage-plan-probe",
     "total_bytes": 294971764736
   }

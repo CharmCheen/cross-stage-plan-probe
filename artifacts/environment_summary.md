@@ -8,7 +8,7 @@
 - CUDA available/runtime: UNKNOWN / UNKNOWN
 - PyTorch: UNKNOWN
 - FFmpeg: UNKNOWN
-- Storage: NTFS with 103655211008 free bytes
+- Storage: NTFS with 103528468480 free bytes
 - Git root/branch: D:/FDU/Experiment/cross-stage-plan-probe / main
-- Git commit/dirty: PRE-COMMIT / True
+- Git commit/dirty: 2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce / True
 - Git origin: https://github.com/CharmCheen/cross-stage-plan-probe.git

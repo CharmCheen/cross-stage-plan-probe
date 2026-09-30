@@ -2,10 +2,14 @@
   "provenance": {
     "repository": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
     "branch": "main",
-    "commit": "PRE-COMMIT",
+    "commit": "2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce",
     "remote_main": "no refs/commits found after fetch",
     "captured_at_utc": "2026-09-30T03:58:18.845921+00:00",
-    "history": "M0-M2 were completed before Git initialization; the user later initialized Git, and this task verified origin and refreshed provenance."
+    "history": "M0-M2 were completed before Git initialization; the user later initialized Git, and this task verified origin and refreshed provenance.",
+    "implementation_commit": "2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce",
+    "handoff_metadata_commit": "pending",
+    "push": "pending",
+    "working_tree_at_environment_probe": "clean"
   },
   "inventory_scope": "Files created or generated for M0-M2 and Git hygiene; unchanged original docs pack is excluded.",
   "files": [
