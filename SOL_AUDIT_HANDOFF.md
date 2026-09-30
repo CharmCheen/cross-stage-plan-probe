@@ -260,6 +260,7 @@ This section is additive. The initial audit, R1–R4 remediation, RF1–RF6 conv
 ### Verification artifacts and gate
 
 - New evidence: `artifacts/audits/f1_f5_closure/` contains the closure summary, targeted counterexample replays, positive controls, RF2/RF6 regression, full test results, resolved config, run trace/validation, audit export, and provenance.
+- Implementation commit: `2853c59365ea39e2edaa7b8d20deccf869e808e3`; this follow-up metadata commit records the implementation SHA without rewriting earlier audit history.
 - Full regression: **133 passed, 0 failed, 0 skipped**. Targeted F1–F5/N6 event-dictionary suite: **72 passed**. RF2/RF6 targeted regression: **18 passed**, including adjacent consumer interval acceptance. Isolated CLI doctor/config/manifest/legality/smoke/trace-validation/audit-export: all **PASS**.
 - **Final Sol closure re-audit gate: READY** — ready for GPT-6.1 Sol final closure re-audit only. This does not mean `APPROVED`, `ENGINEERING_READY_FOR_M3`, or `M3 approved`.
 - M3 has not started. No real video, FFmpeg/PyAV backend, PyTorch, CUDA, GPU execution, optimizer, or research mechanism was added.
