@@ -1,0 +1,10 @@
+{
+  "errors": [],
+  "frame_ids_hash": "df6e47c912dbc839404525e436b83e91c5f6aee5ff3b15bf09db300889ec41df",
+  "occurrence_count": 3,
+  "rng_scheme_version": "hmac-sha256-canonical-json-tuple-v2",
+  "sample_manifest_hash": "1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a",
+  "seed": 20260930,
+  "transform_draws_hash": "237dd63f9c80404ab0e87bb0c2525321d02805bcf483e9e80615821f70efb0b4",
+  "valid": true
+}

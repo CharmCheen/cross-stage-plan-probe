@@ -1,0 +1,49 @@
+{
+  "repository": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+  "branch": "main",
+  "base_commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
+  "implementation_commit": "PENDING_IMPLEMENTATION_COMMIT",
+  "provenance_commit": "PENDING_METADATA_COMMIT",
+  "remote_main_at_start": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
+  "cli_base_commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
+  "cli_source_overlay": [
+    "src/cspp/tracing/trace.py",
+    "src/cspp/tracing/validator.py"
+  ],
+  "cli_source_overlay_state": "Final patched source copied into an isolated clone; the clone reported dirty=true, and all CLI output was retained there before copying.",
+  "cli_run_id": "f1-f5-closure-final-20260930",
+  "cli_run_context_hash": "84714ce42abc03e797111fa2ab4088e2901297e39732d0f3115adb720d80515d",
+  "cli_manifest_hash": "1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a",
+  "cli_resolved_config_sha256": "eba081badb20eb2bde07445ff3f276daf1666249bf19ea120da208cdcf25d94f",
+  "test_results": {
+    "passed": 133,
+    "failed": 0,
+    "skipped": 0
+  },
+  "targeted_state_machine_cases": {
+    "passed": 72,
+    "failed": 0,
+    "skipped": 0
+  },
+  "rf2_rf6_cases": {
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cli_commands": {
+    "doctor": "PASS",
+    "validate-config": "PASS",
+    "validate-manifest": "PASS",
+    "legality-check": "PASS",
+    "smoke": "PASS",
+    "validate-trace": "PASS",
+    "audit-export": "PASS"
+  },
+  "capability_limits": [
+    "PyTorch absent",
+    "CUDA runtime UNKNOWN",
+    "FFmpeg unavailable",
+    "No real video workload",
+    "No GPU training"
+  ]
+}

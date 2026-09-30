@@ -26,7 +26,8 @@ def _draw(seed, record, purpose="augmentation"):
 
 
 def _hand_trace(config, records, *, input_counts=None, dependencies=None,
-                producer_order=None, operator="independent_fixture_decode", temporary=False):
+                producer_order=None, operator="independent_fixture_decode", temporary=False,
+                derived_chain=False, interleave_inputs=False, reverse_dequeue=False):
     run_id = "hand-built-state-machine"
     context = build_execution_context(records, config, run_id)
     expected = {record["occurrence_id"]: record for record in records}
@@ -102,35 +103,75 @@ def _hand_trace(config, records, *, input_counts=None, dependencies=None,
                          metadata={"dependency_id": dep, "dependency_kind": f"input-{d}",
                                    "completion_event_id": root["event_id"]})
             dep_ids[oid].append((dep, event))
+        if derived_chain and dep_ids[oid]:
+            depth = derived_chain if isinstance(derived_chain, int) and not isinstance(derived_chain, bool) else 1
+            source_id, source_event = dep_ids[oid][0]
+            source_kind = "input-0"
+            for level in range(depth):
+                derived_id = f"derived-{oid}-from-{source_id}-{level}"
+                derived = emit("dependency_complete", record, object_id=object_ids[oid][0],
+                               metadata={"dependency_id": derived_id, "dependency_kind": f"derived_input_{level}",
+                                         "source_dependency_id": source_id, "source_dependency_kind": source_kind,
+                                         "completion_event_id": source_event["event_id"]})
+                source_id, source_event = derived_id, derived
+                source_kind = f"derived_input_{level}"
+            dep_ids[oid] = [(source_id, source_event)]
+        bindings = [{"object_id": object_id, "dependency_ids": [dep for dep, _ in dep_ids[oid]]}
+                    for object_id in object_ids[oid]]
+        required_dependency_ids = sorted({dep for binding in bindings for dep in binding["dependency_ids"]})
         ready = emit("ready", record, object_id=object_ids[oid][0],
-                     metadata={"required_dependency_ids": [dep for dep, _ in dep_ids[oid]],
+                     metadata={"required_dependency_ids": required_dependency_ids,
+                               "required_inputs": bindings,
                                "ready_definition": "all consumer-required dependencies completed"})
         ready["ready_time_ns"] = ready["ts_ns"]
 
     # Physical queue admission is independently accounted per object identity.
-    for oid in order:
+    physical_items = [(oid, object_id) for oid in order for object_id in object_ids[oid]]
+    for oid, object_id in physical_items:
         record = expected[oid]
-        for object_id in object_ids[oid]:
-            nbytes = 10
-            req = emit("queue_admission_request", record, object_id=object_id, bytes=nbytes)
-            queue_snapshot(req)
-            alloc = emit("allocation", record, object_id=object_id, bytes=nbytes, device="host",
-                         metadata={"owner": "queue", "object_role": "input"})
-            live["host"] += nbytes
-            live_snapshot(alloc)
-            admission = emit("queue_admission", record, object_id=object_id, bytes=nbytes)
-            credit += nbytes; queue_items += nbytes
-            queue_snapshot(admission)
-    for oid in order:
+        nbytes = 10
+        req = emit("queue_admission_request", record, object_id=object_id, bytes=nbytes)
+        queue_snapshot(req)
+        dep_binding = next(binding["dependency_ids"] for event in out
+                           if event["event_type"] == "ready" and event["occurrence_id"] == oid
+                           for binding in event["metadata"]["required_inputs"] if binding["object_id"] == object_id)
+        alloc = emit("allocation", record, object_id=object_id, bytes=nbytes, device="host",
+                     metadata={"owner": "queue", "object_role": "input",
+                               "required_dependency_ids": dep_binding})
+        live["host"] += nbytes
+        live_snapshot(alloc)
+
+    def admit(item):
+        nonlocal credit, queue_items
+        oid, object_id = item
         record = expected[oid]
-        for object_id in object_ids[oid]:
-            dequeue = emit("queue_dequeue", record, object_id=object_id, bytes=10)
-            queue_items -= 10
-            queue_snapshot(dequeue)
-            transfer = emit("ownership_transfer", record, object_id=object_id, bytes=10, device="host",
-                            metadata={"old_owner": "queue", "new_owner": "consumer", "owner": "consumer",
-                                      "object_role": "input"})
-            live_snapshot(transfer); queue_snapshot(transfer)
+        admission = emit("queue_admission", record, object_id=object_id, bytes=10)
+        credit += 10; queue_items += 10
+        queue_snapshot(admission)
+
+    def dequeue(item):
+        nonlocal queue_items
+        oid, object_id = item
+        record = expected[oid]
+        event = emit("queue_dequeue", record, object_id=object_id, bytes=10)
+        queue_items -= 10
+        queue_snapshot(event)
+        required_dependency_ids = next(allocation["metadata"]["required_dependency_ids"] for allocation in out
+                                       if allocation["event_type"] == "allocation" and allocation["object_id"] == object_id)
+        transfer = emit("ownership_transfer", record, object_id=object_id, bytes=10, device="host",
+                        metadata={"old_owner": "queue", "new_owner": "consumer", "owner": "consumer",
+                                  "object_role": "input", "required_dependency_ids": required_dependency_ids})
+        live_snapshot(transfer); queue_snapshot(transfer)
+
+    if interleave_inputs:
+        for item in physical_items:
+            admit(item); dequeue(item)
+    else:
+        for item in physical_items:
+            admit(item)
+        dequeue_order = list(reversed(physical_items)) if reverse_dequeue else physical_items
+        for item in dequeue_order:
+            dequeue(item)
 
     # Consumer/update execution always follows the frozen manifest order.
     for record in sorted(records, key=lambda r: (r["step_id"], r["sample_order_baseline"], r["occurrence_id"])):
@@ -173,6 +214,183 @@ def _hand_trace(config, records, *, input_counts=None, dependencies=None,
 def _errors(events, expected, context):
     return validate_trace(events, 100, expected_occurrences=expected,
                           expected_run_context=context)
+
+
+def _wait_pair(template, suffix, start_ns, end_ns, availability_event_id):
+    start = deepcopy(template)
+    start.update(event_id=f"manual-wait-start-{suffix}", event_type="consumer_wait_start",
+                 interval_id=f"manual-wait-{suffix}", ts_ns=start_ns, object_id=None,
+                 reason="input_unavailable", duration_ns=None,
+                 metadata={"critical_dependency": "input_admission"})
+    end = deepcopy(start)
+    duration = end_ns - start_ns
+    end.update(event_id=f"manual-wait-end-{suffix}", event_type="consumer_wait_end",
+               ts_ns=end_ns, duration_ns=duration,
+               metadata={"critical_dependency": "input_admission", "availability_event_id": availability_event_id,
+                         "duration_ns": duration, "observed_duration_ns": duration})
+    return start, end
+
+
+def test_f1_derived_dependency_chain_has_distinct_identity(config, records):
+    events, expected, context = _hand_trace(config, records, derived_chain=3)
+    assert _errors(events, expected, context) == []
+
+    changed = deepcopy(events)
+    derived = [event for event in changed if event["event_type"] == "dependency_complete" and
+               event["metadata"].get("source_dependency_id")]
+    derived[0]["metadata"]["source_dependency_id"] = "foreign-source"
+    assert any("derived dependency source identity" in error for error in _errors(changed, expected, context))
+
+
+def test_f2_wait_availability_uses_event_stream_order_at_timestamp_tie(config, records):
+    events, expected, context = _hand_trace(config, records)
+    admission = next(event for event in events if event["event_type"] == "queue_admission")
+    start, end = _wait_pair(admission, "tie", admission["ts_ns"] - 5,
+                            admission["ts_ns"], admission["event_id"])
+
+    valid = deepcopy(events)
+    ai = next(i for i, event in enumerate(valid) if event["event_id"] == admission["event_id"])
+    valid[ai:ai] = [start]
+    valid.insert(ai + 2, end)  # admission is earlier in stream at the tied timestamp
+    assert _errors(valid, expected, context) == []
+
+    invalid = deepcopy(events)
+    ai = next(i for i, event in enumerate(invalid) if event["event_id"] == admission["event_id"])
+    invalid[ai:ai] = [start, end]  # wait_end precedes admission at the same timestamp
+    assert any("event-stream order" in error for error in _errors(invalid, expected, context))
+
+
+def test_f2_adjacent_input_waits_are_valid_but_overlapping_waits_fail(config, records):
+    oid = records[0]["occurrence_id"]
+    events, expected, context = _hand_trace(config, records, input_counts={oid: 2})
+    admissions = [event for event in events if event["event_type"] == "queue_admission" and event["occurrence_id"] == oid]
+    first_start, first_end = _wait_pair(admissions[0], "adjacent-a", admissions[0]["ts_ns"] - 10,
+                                        admissions[0]["ts_ns"], admissions[0]["event_id"])
+    second_start, second_end = _wait_pair(admissions[1], "adjacent-b", admissions[0]["ts_ns"],
+                                          admissions[1]["ts_ns"], admissions[1]["event_id"])
+    valid = deepcopy(events)
+    indexes = {event["event_id"]: i for i, event in enumerate(valid)}
+    valid.insert(indexes[admissions[0]["event_id"]], first_start)
+    indexes = {event["event_id"]: i for i, event in enumerate(valid)}
+    valid.insert(indexes[admissions[0]["event_id"]] + 1, first_end)
+    indexes = {event["event_id"]: i for i, event in enumerate(valid)}
+    valid.insert(indexes[admissions[1]["event_id"]], second_start)
+    indexes = {event["event_id"]: i for i, event in enumerate(valid)}
+    valid.insert(indexes[admissions[1]["event_id"]] + 1, second_end)
+    assert _errors(valid, expected, context) == []
+
+    t0, t1 = admissions[0]["ts_ns"], admissions[1]["ts_ns"]
+    for shape in ("partial", "nested", "same-start"):
+        overlap = deepcopy(valid)
+        starts = [event for event in overlap if event["event_type"] == "consumer_wait_start"]
+        ends = [event for event in overlap if event["event_type"] == "consumer_wait_end"]
+        if shape == "partial":
+            starts[0]["ts_ns"], ends[0]["ts_ns"] = t0 - 10, t0 + 5
+            starts[1]["ts_ns"], ends[1]["ts_ns"] = t0 - 5, t1
+        elif shape == "nested":
+            starts[0]["ts_ns"], ends[0]["ts_ns"] = t0 - 20, t1 + 5
+            starts[1]["ts_ns"], ends[1]["ts_ns"] = t0, t1
+        else:
+            starts[0]["ts_ns"], ends[0]["ts_ns"] = t0 - 10, t1 + 5
+            starts[1]["ts_ns"], ends[1]["ts_ns"] = t0 - 10, t1
+        for start_event, end_event in zip(starts, ends):
+            duration = end_event["ts_ns"] - start_event["ts_ns"]
+            end_event["duration_ns"] = duration
+            end_event["metadata"].update(duration_ns=duration, observed_duration_ns=duration)
+        overlap.sort(key=lambda event: event["ts_ns"])
+        assert any("wait intervals overlap" in error for error in _errors(overlap, expected, context)), shape
+
+
+@pytest.mark.parametrize("preserve_access,should_pass", [(False, False), (True, True)])
+def test_f3_active_consumer_access_lease(config, records, preserve_access, should_pass):
+    events, expected, context = _hand_trace(config, records)
+    changed = deepcopy(events)
+    start = next(event for event in changed if event["event_type"] == "consumer_start")
+    object_id = start["metadata"]["input_object_ids"][0]
+    allocation = next(event for event in changed if event["event_type"] == "allocation" and event["object_id"] == object_id)
+    release = next(event for event in changed if event["event_type"] == "release" and event["object_id"] == object_id)
+    template = next(event for event in changed if event["event_type"] == "ownership_transfer" and event["object_id"] == object_id)
+    if preserve_access:
+        allocation["metadata"]["readable_by"] = ["consumer"]
+    transfer = deepcopy(template)
+    transfer.update(event_id="manual-mid-compute-transfer", ts_ns=start["ts_ns"] + 1)
+    transfer["metadata"].update(old_owner="consumer", new_owner="third-party",
+                                 owner="third-party", object_role="input", current_item_bytes=0)
+    if preserve_access:
+        transfer["metadata"]["readable_by"] = ["consumer"]
+    release["metadata"]["owner"] = "third-party"
+    changed.insert(changed.index(start) + 1, transfer)
+    errors = _errors(changed, expected, context)
+    if should_pass:
+        assert errors == []
+    else:
+        assert any("revoked an active consumer input access lease" in error for error in errors)
+
+
+@pytest.mark.parametrize("kind", ["two-inputs-two-dependencies", "three-inputs-three-dependencies",
+                                   "one-dependency-two-inputs", "interleaved-admission-dequeue",
+                                   "reverse-dequeue-order"])
+def test_f4_f5_positive_multi_input_bindings_and_aggregate_state(config, records, kind):
+    oid = records[0]["occurrence_id"]
+    if kind == "two-inputs-two-dependencies":
+        events, expected, context = _hand_trace(config, records, input_counts={oid: 2}, dependencies={oid: 2})
+    elif kind == "three-inputs-three-dependencies":
+        events, expected, context = _hand_trace(config, records, input_counts={oid: 3}, dependencies={oid: 3})
+    elif kind == "one-dependency-two-inputs":
+        events, expected, context = _hand_trace(config, records, input_counts={oid: 2}, dependencies={oid: 1})
+    elif kind == "interleaved-admission-dequeue":
+        events, expected, context = _hand_trace(config, records, input_counts={oid: 2}, interleave_inputs=True)
+    else:
+        events, expected, context = _hand_trace(config, records, input_counts={oid: 2}, reverse_dequeue=True)
+    assert _errors(events, expected, context) == []
+
+
+@pytest.mark.parametrize("mutation", ["unsatisfied-second", "unknown-dependency", "foreign-dependency",
+                                       "omitted-input", "transfer-binding"])
+def test_f4_every_consumer_input_is_dependency_bound(config, records, mutation):
+    oid = records[0]["occurrence_id"]
+    events, expected, context = _hand_trace(config, records, input_counts={oid: 2}, dependencies={oid: 2})
+    changed = deepcopy(events)
+    ready = next(event for event in changed if event["event_type"] == "ready" and event["occurrence_id"] == oid)
+    bindings = ready["metadata"]["required_inputs"]
+    if mutation == "unsatisfied-second":
+        dep = next(event for event in changed if event["event_type"] == "dependency_complete" and event["occurrence_id"] == oid and
+                   event["metadata"]["dependency_id"].endswith("-1"))
+        changed.remove(dep)
+    elif mutation == "unknown-dependency":
+        bindings[1]["dependency_ids"] = ["missing-dependency"]
+        ready["metadata"]["required_dependency_ids"] = [bindings[0]["dependency_ids"][0], "missing-dependency"]
+    elif mutation == "foreign-dependency":
+        foreign_oid = records[1]["occurrence_id"]
+        foreign_dep = next(event["metadata"]["dependency_id"] for event in changed
+                           if event["event_type"] == "dependency_complete" and event["occurrence_id"] == foreign_oid)
+        bindings[1]["dependency_ids"] = [foreign_dep]
+    elif mutation == "transfer-binding":
+        transfer = next(event for event in changed if event["event_type"] == "ownership_transfer" and
+                        event["occurrence_id"] == oid)
+        transfer["metadata"]["required_dependency_ids"] = ["foreign-dependency"]
+    else:
+        consumer = next(event for event in changed if event["event_type"] == "consumer_start" and event["occurrence_id"] == oid)
+        consumer["metadata"]["input_object_ids"] = consumer["metadata"]["input_object_ids"][:1]
+    assert _errors(changed, expected, context)
+
+
+def test_f5_consumer_rejects_input_not_dequeued(config, records):
+    oid = records[0]["occurrence_id"]
+    events, expected, context = _hand_trace(config, records, input_counts={oid: 2})
+    changed = deepcopy(events)
+    second = next(event for event in changed if event["event_type"] == "queue_dequeue" and
+                  event["occurrence_id"] == oid and event["object_id"].endswith("input-1"))
+    changed.remove(second)
+    assert _errors(changed, expected, context)
+
+
+def test_n6_ready_timestamp_aliases_must_agree(config, records):
+    events, expected, context = _hand_trace(config, records)
+    changed = deepcopy(events)
+    ready = next(event for event in changed if event["event_type"] == "ready")
+    ready["metadata"]["ready_time_ns"] = ready["ready_time_ns"] + 1
+    assert any("ready_time_ns disagree" in error for error in _errors(changed, expected, context))
 
 
 def test_hand_built_positive_control_matrix(config, records):
@@ -382,6 +600,25 @@ def test_rf2_overlapping_consumer_compute_intervals_are_rejected(config, records
     changed.sort(key=lambda e: e["ts_ns"])
     errors = _errors(changed, expected, context)
     assert any("consumer compute intervals overlap" in error for error in errors)
+
+
+def test_rf2_adjacent_consumer_compute_intervals_are_accepted(config, records):
+    events, expected, context = _hand_trace(config, records)
+    changed = deepcopy(events)
+    starts = [event for event in changed if event["event_type"] == "consumer_start"][:2]
+    first_end = next(event for event in changed if event["event_type"] == "consumer_end" and
+                     event["occurrence_id"] == starts[0]["occurrence_id"])
+    second_start = starts[1]
+    first_end_index = changed.index(first_end)
+    second_start_index = changed.index(second_start)
+    boundary = second_start["ts_ns"]
+    first_end["ts_ns"] = boundary
+    duration = boundary - starts[0]["ts_ns"]
+    first_end["duration_ns"] = duration
+    first_end["metadata"].update(duration_ns=duration, observed_duration_ns=duration)
+    for event in changed[first_end_index + 1:second_start_index]:
+        event["ts_ns"] = boundary
+    assert _errors(changed, expected, context) == []
 
 
 @pytest.mark.parametrize("mutation", ["wrong_transfer_bytes", "wrong_transfer_layer", "wrong_old_owner",

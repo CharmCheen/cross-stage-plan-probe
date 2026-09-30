@@ -1,0 +1,17 @@
+{
+  "count": 10,
+  "passed": 10,
+  "failed": 0,
+  "controls": [
+    "Derived dependency chain with distinct identities (three levels)",
+    "Same-timestamp admission precedes wait_end in event stream",
+    "Adjacent waits for two required inputs",
+    "Ownership transfer during consumer execution preserving readable_by access",
+    "Two consumer inputs with two satisfied dependencies",
+    "Three consumer inputs with three satisfied dependencies",
+    "One satisfied dependency bound to two physical inputs",
+    "Interleaved admit/dequeue A then admit/dequeue B",
+    "Admit A and B then dequeue B and A",
+    "Adjacent frozen-order consumer compute intervals"
+  ]
+}

@@ -10,11 +10,13 @@ Each frozen `occurrence_id` has an independent logical state:
 PENDING → DEPENDENCIES_SATISFIED → READY → ADMITTED → DEQUEUED → EXECUTING → COMPLETED
 ```
 
-Repeated dependencies, object admissions, and dequeues may leave the occurrence in its current state. Every other state change must be the next forward transition. The validator checks the expected consumer order from `(step_id, sample_order_baseline, occurrence_id)`. Producer and preprocessing intervals may appear in another order. Every frozen occurrence must have exactly one complete consumer interval and at least one admitted input object.
+Repeated dependencies, object admissions, and dequeues may leave the occurrence in its current state. Aggregate `ADMITTED` and `DEQUEUED` milestones are derived from the full set of `ready.metadata.required_inputs`; an individual object's admission/dequeue never regresses the occurrence phase. Every declared input must be admitted and dequeued before consumer start. The validator checks the expected consumer order from `(step_id, sample_order_baseline, occurrence_id)`. Producer and preprocessing intervals may appear in another order. Every frozen occurrence must have exactly one complete consumer interval and all declared required inputs.
 
 ## Dependency transitions
 
-A `dependency_complete` event names a unique dependency ID and kind for its logical occurrence. Its `completion_event_id` must refer to an earlier completion already validated by the event replay: a correctly paired producer `operator_end`, or an earlier valid dependency completion. The root must match run, sample, occurrence, step, microbatch, and physical object identity. Self references, forward references, cycles, roots from another occurrence, and roots without a closed producer interval are invalid. `ready` requires a non-empty set of distinct dependency IDs that have all reached `SATISFIED`.
+A `dependency_complete` event names a unique dependency ID and kind for its logical occurrence. Its `completion_event_id` must refer to an earlier completion already validated by event-stream replay: a correctly paired producer `operator_end`, or an earlier valid dependency completion. A producer root directly proves the matching dependency ID/kind. A dependency-derived completion has its own new ID/kind and names its parent with `source_dependency_id` and `source_dependency_kind`; these fields must match the validated parent identity. The root must match run, sample, occurrence, step, microbatch, and physical object identity. Self references, forward references, cycles, roots from another occurrence, and roots without a closed producer interval are invalid.
+
+`ready.metadata.required_inputs` is a non-empty list of `{object_id, dependency_ids}` bindings. Every input object has at least one distinct, already-satisfied dependency; the union of those dependencies must exactly equal `required_dependency_ids`. One satisfied dependency may bind more than one physical input. `ready` does not make an undeclared or unsatisfied input legal.
 
 ## Physical object transitions
 
@@ -25,7 +27,7 @@ UNALLOCATED → ALLOCATED(owner, bytes, layer, occurrence, role)
 ALLOCATED → ALLOCATED(new owner) → RELEASED
 ```
 
-Object ID, byte count, resource layer, occurrence, and role are immutable. Ownership transfer checks current and new owner and carries independently checked live-byte and credit snapshots. A host/GPU copy is a separate object or a separately specified copy event; ownership transfer alone does not migrate resources. Consumer access requires a live, admitted and dequeued input object for the same occurrence, with current owner `consumer` or an allocation-time `readable_by` declaration containing `consumer`. Input objects remain live until consumer completion; temporary objects may be released earlier. Every allocated object must reach `RELEASED` before the run ends.
+Object ID, byte count, resource layer, occurrence, role, and allocation-time dependency bindings are immutable. Each `input` allocation must match its ready declaration and each consumer input set must exactly match the ready-declared set. Ownership transfer checks current and new owner and carries independently checked live-byte and credit snapshots. A host/GPU copy is a separate object or a separately specified copy event; ownership transfer alone does not migrate resources. Consumer access requires a live, admitted and dequeued input object for the same occurrence, with current owner `consumer` or an allocation-time `readable_by` declaration containing `consumer`. A consumer start opens an access lease for every input; a transfer during that interval is legal only if the consumer remains authorized to read the object. Input objects remain live until consumer completion; temporary objects may be released earlier. Every allocated object must reach `RELEASED` before the run ends.
 
 ## Queue and resource accounting
 
@@ -44,7 +46,7 @@ Each interval ID is globally unique for the run and can be closed once. Pair typ
 
 ## Consumer timeline and input waits
 
-The synthetic model has one frozen-order consumer. Closed compute intervals cannot overlap one another. An exposed input wait cannot overlap any compute interval, must concern the next frozen consumer occurrence, and uses the explicit `input_admission` critical dependency. It begins before that occurrence has an admitted input and ends only after its own later queue-admission event. A wait cannot be attributed to an earlier legal occurrence that is still incomplete. Consumer `ready_time_ns` at both event and metadata level must equal the reconstructed ready-event timestamp.
+The synthetic model has one frozen-order consumer. Closed compute intervals cannot overlap one another; exposed wait intervals cannot overlap one another or any compute interval. An exposed input wait must concern the next frozen consumer occurrence and uses the explicit `input_admission` critical dependency. It begins while at least one required input remains unavailable and ends only after a later-in-stream admission for one of that occurrence's declared inputs. Timestamp ties are resolved by event-stream order: an admission must precede `wait_end`. A wait cannot be attributed to an earlier legal occurrence that is still incomplete. Consumer `ready_time_ns` at both event and metadata level must equal the reconstructed ready-event timestamp; duplicate aliases must agree.
 
 ## Full-run validation contract
 

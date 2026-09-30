@@ -142,6 +142,10 @@ class LiveByteLedger:
 
     def _emit(self, typ: str, oid: str, item: dict[str, Any], extra: dict[str, Any] | None = None) -> dict[str, Any]:
         metadata = {"owner": item["owner"], "object_role": item.get("object_role", "input"), **(extra or {})}
+        if "required_dependency_ids" in item:
+            metadata["required_dependency_ids"] = list(item["required_dependency_ids"])
+        if "readable_by" in item:
+            metadata["readable_by"] = list(item["readable_by"])
         snapshots = dict(self.totals)
         return self.trace.emit(typ, object_id=oid, bytes=item["bytes"], device=item["layer"],
                                reported_live_bytes=snapshots, **{f"{k}_live_bytes": v for k, v in snapshots.items()},
@@ -198,7 +202,8 @@ class ByteCreditQueue:
                                                   "current_item_bytes": self.item_bytes,
                                                   "capacity_basis": "unreleased_object_credits",
                                                   "capacity_bytes": self.capacity_bytes})
-            self.ledger.allocate(oid, nbytes, "host", "queue", object_role="input", **_event_ids(item))
+            self.ledger.allocate(oid, nbytes, "host", "queue", object_role="input",
+                                 required_dependency_ids=item.get("required_dependency_ids", []), **_event_ids(item))
             self.credits[oid] = nbytes
             self.queued_bytes += nbytes
             self.item_bytes += nbytes
@@ -326,10 +331,11 @@ def run_synthetic_pipeline(config: dict[str, Any], records: list[dict[str, Any]]
                            metadata={"dependency_id": dep, "dependency_kind": "consumer_input", "completion_event_id": op_end["event_id"]})
                 ready = trace.emit("ready", **ids, object_id=oid, bytes=nbytes,
                                    metadata={"required_dependency_ids": [dep],
+                                             "required_inputs": [{"object_id": oid, "dependency_ids": [dep]}],
                                              "ready_definition": "all declared consumer-required inputs are available"})
                 ready["ready_time_ns"] = ready["ts_ns"]
                 queue.put({**ids, "object_id": oid, "bytes": nbytes, "ready_time_ns": ready["ts_ns"],
-                           "dependency_id": dep, "record": record})
+                           "dependency_id": dep, "required_dependency_ids": [dep], "record": record})
         except BaseException as exc:
             failures.append(exc)
         finally:

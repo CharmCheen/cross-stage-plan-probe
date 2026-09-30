@@ -206,3 +206,61 @@ This section records the third M0–M2 hardening round. Earlier M0–M2 implemen
 - M3 has not started. No `D_repr_*`, `D_gran_*`, H1/H2/H3/H4, optimizer, or other research mechanism was added.
 - PyTorch remains absent; CUDA runtime remains `UNKNOWN`; FFmpeg is unavailable; no real video workload or GPU training has run. These limitations remain disclosed and unchanged.
 - The synthetic consumer remains a single frozen-order consumer; this round makes no claim about real training alternate-work attribution or instrumentation overhead.
+
+## F1–F5 final closure patch
+
+This section is additive. The initial audit, R1–R4 remediation, RF1–RF6 convergence record, and the most recent failed final re-audit are retained above and in their original artifacts. The previous final targeted re-audit verdict was `APPROVE_WITH_REQUIRED_FIXES` / `ENGINEERING_NOT_READY`; it identified five remaining major contract defects and one non-blocking timestamp consistency issue. This patch does not rewrite that verdict and does not constitute Sol approval.
+
+### F1 — Derived dependency identity
+
+- Problem: a derived dependency was required to reuse its source dependency ID/kind.
+- State-machine fix: source/root identity is validated separately from the new dependency identity. Operator roots prove their own declared dependency; derived completions name a previously satisfied parent via `source_dependency_id` and `source_dependency_kind`.
+- Negative tests: forged source dependency identity is rejected; earlier-root/cycle/reference checks remain covered by RF1 tests.
+- Positive tests: a three-level chain with distinct dependency IDs/kinds validates.
+- Result: **PASS** in independent event-dictionary tests.
+
+### F2 — Wait causality and exclusivity
+
+- Problem: timestamp ties could let a wait end before its availability event in stream order, and waits could overlap on the single consumer.
+- State-machine fix: availability must be an earlier event than `wait_end`; it must be an admission for a declared input of the same occurrence. Closed waits are checked globally for overlap; adjacent waits remain valid.
+- Negative tests: same-timestamp reversed stream ordering plus partial, nested, and same-start overlapping waits are rejected.
+- Positive tests: same-timestamp admission-before-end and adjacent waits for separate required inputs validate.
+- Result: **PASS**.
+
+### F3 — Active consumer access lease
+
+- Problem: access could be revoked by ownership transfer after consumer start but before consumer end.
+- State-machine fix: each active consumer records its input access leases. Transfers during execution must retain consumer read permission; transfer is allowed when the allocation-time access declaration continues to authorize the reader.
+- Negative tests: transfer revoking access during compute is rejected.
+- Positive tests: transfer retaining explicit `readable_by` permission validates.
+- Result: **PASS**.
+
+### F4 — Consumer input/dependency binding
+
+- Problem: an input object with no satisfied dependency could be consumed if another dependency had made the occurrence ready.
+- State-machine fix: `ready.metadata.required_inputs` declares object-to-dependency bindings; the ready dependency set must exactly cover those bindings. Each input allocation repeats the immutable binding, and consumer execution must use exactly the declared input set. One dependency may support multiple physical inputs.
+- Negative tests: unsatisfied, unknown, foreign dependency, omitted input, and forged transfer dependency binding cases are rejected.
+- Positive tests: two and three inputs with their own satisfied dependencies, one dependency feeding two inputs, and multiple dependencies/multiple inputs validate.
+- Result: **PASS**.
+
+### F5 — Aggregate multi-input state
+
+- Problem: occurrence-level phase was advanced by each physical input event, rejecting valid interleaved input scheduling.
+- State-machine fix: admitted/dequeued state remains per object; aggregate occurrence milestones advance only when every ready-declared required input has reached the milestone. Consumer start still requires the complete admitted/dequeued set.
+- Negative tests: missing dequeue is rejected.
+- Positive tests: `admit A → dequeue A → admit B → dequeue B → consume {A,B}` and admit-both/dequeue-reverse schedules validate.
+- Result: **PASS**.
+
+### N6 — Ready timestamp consistency
+
+- Problem: duplicate top-level and metadata `ready_time_ns` fields could disagree.
+- Fix and test: both ready events and consumer start events reject inconsistent aliases; a hand-mutated alias mismatch fails validation.
+- Result: **PASS**.
+
+### Verification artifacts and gate
+
+- New evidence: `artifacts/audits/f1_f5_closure/` contains the closure summary, targeted counterexample replays, positive controls, RF2/RF6 regression, full test results, resolved config, run trace/validation, audit export, and provenance.
+- Full regression: **133 passed, 0 failed, 0 skipped**. Targeted F1–F5/N6 event-dictionary suite: **72 passed**. RF2/RF6 targeted regression: **18 passed**, including adjacent consumer interval acceptance. Isolated CLI doctor/config/manifest/legality/smoke/trace-validation/audit-export: all **PASS**.
+- **Final Sol closure re-audit gate: READY** — ready for GPT-6.1 Sol final closure re-audit only. This does not mean `APPROVED`, `ENGINEERING_READY_FOR_M3`, or `M3 approved`.
+- M3 has not started. No real video, FFmpeg/PyAV backend, PyTorch, CUDA, GPU execution, optimizer, or research mechanism was added.
+- Implementation and provenance commits are recorded in `artifacts/audits/f1_f5_closure/provenance.json` after they are created.

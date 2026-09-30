@@ -1,0 +1,8 @@
+{
+  "cli_smoke_run_id": "f1-f5-closure-final-20260930",
+  "cli_smoke_events": 46,
+  "cli_smoke_valid": true,
+  "cli_revalidation_valid": true,
+  "errors": [],
+  "source": "final isolated clone with patched M0-M2 validator source overlay"
+}

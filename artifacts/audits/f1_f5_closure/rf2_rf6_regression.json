@@ -1,0 +1,9 @@
+{
+  "command": "python -m pytest tests/adversarial/test_trace_state_machine.py -q -k \"rf2 or rf6\"",
+  "passed": 18,
+  "failed": 0,
+  "skipped": 0,
+  "deselected": 54,
+  "rf2": "PASS",
+  "rf6": "PASS"
+}

@@ -1,0 +1,109 @@
+{
+  "cache_state": "synthetic_fixture_no_data_cache",
+  "config_hash": "eba081badb20eb2bde07445ff3f276daf1666249bf19ea120da208cdcf25d94f",
+  "draws_hash": "237dd63f9c80404ab0e87bb0c2525321d02805bcf483e9e80615821f70efb0b4",
+  "environment": {
+    "captured_at_utc": "2026-09-30T08:05:55.611655+00:00",
+    "cpu": {
+      "logical_cores": 16,
+      "model": "AMD Ryzen 7 5800H with Radeon Graphics         ",
+      "physical_cores": 8,
+      "physical_cores_reason": "physical core count unavailable"
+    },
+    "cuda_available": "UNKNOWN",
+    "cuda_runtime_version": "UNKNOWN",
+    "ffmpeg": {
+      "available": false,
+      "reason": "[WinError 2] \u7cfb\u7edf\u627e\u4e0d\u5230\u6307\u5b9a\u7684\u6587\u4ef6\u3002",
+      "version": "UNKNOWN"
+    },
+    "git": {
+      "available": true,
+      "branch": "main",
+      "branch_reason": null,
+      "commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
+      "commit_reason": null,
+      "dirty": true,
+      "origin": "D:\\FDU\\Experiment\\cross-stage-plan-probe",
+      "origin_reason": null,
+      "root": "C:/Users/12914/AppData/Local/Temp/cspp-f1-f5-95a0e78416ff4cdbb85517ceece0d473",
+      "root_reason": null,
+      "status_reason": null
+    },
+    "gpu": {
+      "count": 1,
+      "devices": [
+        {
+          "model": "NVIDIA GeForce RTX 3050 Laptop GPU",
+          "vram_mib": 4096
+        }
+      ],
+      "query_reason": null
+    },
+    "kernel": "11",
+    "os": {
+      "machine": "AMD64",
+      "release": "11",
+      "system": "Windows",
+      "version": "10.0.26200"
+    },
+    "python": {
+      "executable": "D:\\anaconda3\\python.exe",
+      "version": "3.13.9"
+    },
+    "pytorch_reason": "PyTorch is not installed (optional at M0\u2013M2)",
+    "pytorch_version": "UNKNOWN",
+    "ram_reason": null,
+    "ram_total_bytes": 14877257728,
+    "schema_version": "1.0",
+    "storage": {
+      "filesystem": "NTFS",
+      "filesystem_reason": null,
+      "free_bytes": 53528981504,
+      "path": "C:\\Users\\12914\\AppData\\Local\\Temp\\cspp-f1-f5-95a0e78416ff4cdbb85517ceece0d473",
+      "total_bytes": 214749409280
+    }
+  },
+  "failure_reason": null,
+  "frame_ids_hash": "df6e47c912dbc839404525e436b83e91c5f6aee5ff3b15bf09db300889ec41df",
+  "git_commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
+  "manifest_hash": "1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a",
+  "plan_d": "synthetic",
+  "plan_t": "consumer",
+  "resources": {
+    "cpu_threads": 1,
+    "gpu_memory_budget_bytes": 0,
+    "host_memory_budget_bytes": 1048576,
+    "pinned_memory_budget_bytes": 0,
+    "queue_byte_budget": 100
+  },
+  "rng_scheme_version": "hmac-sha256-canonical-json-tuple-v2",
+  "run_context": {
+    "draws_hash": "237dd63f9c80404ab0e87bb0c2525321d02805bcf483e9e80615821f70efb0b4",
+    "frame_ids_hash": "df6e47c912dbc839404525e436b83e91c5f6aee5ff3b15bf09db300889ec41df",
+    "git_commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
+    "git_dirty": true,
+    "input_plan_id": "synthetic",
+    "manifest_hash": "1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a",
+    "resolved_config_hash": "eba081badb20eb2bde07445ff3f276daf1666249bf19ea120da208cdcf25d94f",
+    "resources": {
+      "cpu_threads": 1,
+      "gpu_memory_budget_bytes": 0,
+      "host_memory_budget_bytes": 1048576,
+      "pinned_memory_budget_bytes": 0,
+      "queue_byte_budget": 100
+    },
+    "rng_scheme_version": "hmac-sha256-canonical-json-tuple-v2",
+    "run_context_hash": "26d6a7e0b957ad74f91815808cea85ea53cd5fdcf6bf86f6704c7bd642e46260",
+    "run_id": "f1-f5-closure-20260930",
+    "seed": 20260930,
+    "training_plan_id": "consumer",
+    "work_identity_hash": "b24c3f41a54d1ccfc894b022505310af13dc281d2e30ed2dda1a38194cc43167",
+    "workload_version": "fixture-v1"
+  },
+  "run_id": "f1-f5-closure-20260930",
+  "seed": 20260930,
+  "status": "VALID",
+  "valid": true,
+  "workload_version": "fixture-v1"
+}

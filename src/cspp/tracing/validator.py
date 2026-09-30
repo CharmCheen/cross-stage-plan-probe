@@ -34,10 +34,12 @@ class LogicalOccurrenceState:
     phase: str = "PENDING"
     dependencies: set[str] = field(default_factory=set)
     ready_ns: int | None = None
+    required_inputs: dict[str, tuple[str, ...]] = field(default_factory=dict)
     admitted_objects: set[str] = field(default_factory=set)
     dequeued_objects: set[str] = field(default_factory=set)
     consumer_start: dict[str, Any] | None = None
     consumer_end: dict[str, Any] | None = None
+    active_input_objects: set[str] = field(default_factory=set)
     violations: list[str] = field(default_factory=list)
 
     def advance(self, phase: str) -> None:
@@ -77,6 +79,7 @@ class PhysicalObjectState:
     owner: str
     status: str = "ALLOCATED"
     readable_by: set[str] = field(default_factory=set)
+    required_dependency_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -341,6 +344,7 @@ class TraceStateMachine:
                 if start_event.get("metadata", {}).get("input_object_ids") != meta.get("input_object_ids"):
                     self.error(index, f"consumer input membership differs across execution for {oid}")
                 state.consumer_end = event
+                state.active_input_objects.clear()
                 state.advance("COMPLETED")
                 self.timeline.compute.append((start_ts, end_ts, oid))
         elif start_type == "consumer_wait_start":
@@ -371,10 +375,20 @@ class TraceStateMachine:
                 self.error(index, f"dependency causal root {key} mismatch")
         if root.get("object_id") != event.get("object_id"):
             self.error(index, "dependency causal root physical identity mismatch")
-        prior_id = root.get("metadata", {}).get("dependency_id")
-        prior_kind = root.get("metadata", {}).get("dependency_kind")
-        if prior_id != dep_id or prior_kind != dep_kind:
-            self.error(index, "dependency root identity does not match declared dependency")
+        root_meta = root.get("metadata", {})
+        prior_id = root_meta.get("dependency_id")
+        prior_kind = root_meta.get("dependency_kind")
+        if root.get("event_type") == "operator_end":
+            if prior_id != dep_id or prior_kind != dep_kind:
+                self.error(index, "producer root identity does not match declared dependency")
+                return
+        elif root.get("event_type") == "dependency_complete":
+            if (meta.get("source_dependency_id") != prior_id or
+                    meta.get("source_dependency_kind") != prior_kind):
+                self.error(index, "derived dependency source identity does not match validated dependency")
+                return
+        else:
+            self.error(index, "dependency root is not a validated producer or dependency completion")
             return
         key = (oid, dep_id)
         if key in self.dependencies:
@@ -400,6 +414,33 @@ class TraceStateMachine:
             return
         if event.get("ready_time_ns") != event.get("ts_ns"):
             self.error(index, "ready_time_ns differs from the readiness event timestamp")
+        if "ready_time_ns" in event["metadata"] and event["metadata"].get("ready_time_ns") != event.get("ready_time_ns"):
+            self.error(index, "top-level and metadata ready_time_ns disagree")
+        declared_inputs = event["metadata"].get("required_inputs")
+        if not isinstance(declared_inputs, list) or not declared_inputs:
+            self.error(index, "ready requires a non-empty required_inputs binding")
+            return
+        input_bindings: dict[str, tuple[str, ...]] = {}
+        for binding in declared_inputs:
+            if not isinstance(binding, dict):
+                self.error(index, "required_inputs entries must be objects")
+                return
+            input_id = binding.get("object_id")
+            dependency_ids = binding.get("dependency_ids")
+            if (not isinstance(input_id, str) or not input_id or input_id in input_bindings or
+                    not isinstance(dependency_ids, list) or not dependency_ids or
+                    any(not isinstance(value, str) or not value for value in dependency_ids) or
+                    len(dependency_ids) != len(set(dependency_ids))):
+                self.error(index, "required input binding has invalid or duplicate object/dependency identity")
+                return
+            if not set(dependency_ids).issubset(state.dependencies):
+                self.error(index, f"required input {input_id} has an unsatisfied dependency binding")
+            input_bindings[input_id] = tuple(dependency_ids)
+        binding_dependency_ids = {dep for values in input_bindings.values() for dep in values}
+        if binding_dependency_ids != set(required):
+            self.error(index, "ready dependency set does not exactly cover required input bindings")
+            return
+        state.required_inputs = input_bindings
         self.ready_events[oid] = event
         state.ready_ns = event["ts_ns"]
         state.advance("READY")
@@ -421,7 +462,22 @@ class TraceStateMachine:
         if not isinstance(readable, list) or any(not isinstance(value, str) or not value for value in readable):
             self.error(index, "readable_by must be a list of non-empty access principals")
             return
-        state = PhysicalObjectState(object_id, nbytes, layer, oid, role, owner, readable_by=set(readable))
+        required_dependencies = meta.get("required_dependency_ids", [])
+        if role == "input":
+            logical = self.occurrences.get(oid)
+            expected_dependencies = logical.required_inputs.get(object_id) if logical else None
+            if expected_dependencies is None:
+                self.error(index, "input allocation is not declared by the occurrence ready event")
+                return
+            if not isinstance(required_dependencies, list) or tuple(required_dependencies) != expected_dependencies:
+                self.error(index, "input allocation dependency binding differs from ready declaration")
+                return
+        elif required_dependencies not in ([], None):
+            self.error(index, "temporary object cannot claim consumer input dependencies")
+            return
+        state = PhysicalObjectState(object_id, nbytes, layer, oid, role, owner,
+                                    readable_by=set(readable),
+                                    required_dependency_ids=tuple(required_dependencies or ()))
         self.used_object_ids.add(object_id)
         self.objects[object_id] = state
         self.totals[layer] += nbytes
@@ -439,6 +495,11 @@ class TraceStateMachine:
             self.error(index, "ownership-only transfer changed immutable bytes or resource layer")
         if meta.get("object_role") != obj.role:
             self.error(index, "ownership transfer changed immutable object role")
+        if "required_dependency_ids" in meta:
+            reported_dependencies = meta.get("required_dependency_ids")
+            if (not isinstance(reported_dependencies, list) or
+                    tuple(reported_dependencies) != obj.required_dependency_ids):
+                self.error(index, "ownership transfer changed immutable input dependency binding")
         if meta.get("old_owner") != obj.owner:
             self.error(index, "ownership transfer does not match live owner")
         new_owner = meta.get("new_owner")
@@ -447,6 +508,16 @@ class TraceStateMachine:
             return
         if meta.get("owner") != new_owner:
             self.error(index, "reported transfer owner differs from new_owner")
+        if meta.get("readable_by") is not None:
+            readable = meta["readable_by"]
+            if (not isinstance(readable, list) or
+                    any(not isinstance(value, str) or not value for value in readable) or
+                    set(readable) != obj.readable_by):
+                self.error(index, "ownership transfer changed immutable readable_by access")
+        logical = self.occurrences.get(oid)
+        if logical is not None and obj_id in logical.active_input_objects:
+            if new_owner != "consumer" and "consumer" not in obj.readable_by:
+                self.error(index, "ownership transfer revoked an active consumer input access lease")
         obj.owner = new_owner
         self._snapshot_live(event, index, required=True)
         self._snapshot_credit(event, index, item_required=True)
@@ -504,6 +575,8 @@ class TraceStateMachine:
                     self.error(index, "input admission requires queue ownership")
             if oid not in self.occurrences or self.occurrences[oid].ready_ns is None:
                 self.error(index, "input admitted before its logical occurrence was ready")
+            elif obj_id not in self.occurrences[oid].required_inputs:
+                self.error(index, "queue admission is not a declared required consumer input")
             if not isinstance(nbytes, int) or nbytes <= 0 or self.credit_total + nbytes > self.capacity:
                 self.error(index, "queue byte-credit capacity exceeded")
             elif isinstance(obj_id, str) and obj_id not in self.credit:
@@ -514,7 +587,7 @@ class TraceStateMachine:
                 if oid in self.occurrences:
                     state = self.occurrences[oid]
                     state.admitted_objects.add(obj_id)
-                    state.advance("ADMITTED")
+                    self._refresh_input_phase(state)
             self._snapshot_credit(event, index)
         elif typ == "queue_dequeue":
             obj = self.objects.get(obj_id)
@@ -529,7 +602,7 @@ class TraceStateMachine:
                 if oid in self.occurrences:
                     state = self.occurrences[oid]
                     state.dequeued_objects.add(obj_id)
-                    state.advance("DEQUEUED")
+                    self._refresh_input_phase(state)
             self._snapshot_credit(event, index)
         elif typ == "queue_credit_release":
             obj = self.objects.get(obj_id)
@@ -543,6 +616,14 @@ class TraceStateMachine:
                     self.occurrences[oid].dequeued_objects.discard(obj_id)
             self._snapshot_credit(event, index)
 
+    @staticmethod
+    def _refresh_input_phase(state: LogicalOccurrenceState) -> None:
+        required = set(state.required_inputs)
+        if required and required.issubset(state.admitted_objects) and state.phase in {"READY", "ADMITTED"}:
+            state.advance("ADMITTED")
+        if required and required.issubset(state.dequeued_objects) and state.phase in {"ADMITTED", "DEQUEUED"}:
+            state.advance("DEQUEUED")
+
     def _process_consumer_start(self, event: dict[str, Any], index: int, oid: str | None) -> None:
         if oid not in self.occurrences:
             return
@@ -552,6 +633,9 @@ class TraceStateMachine:
         ready = self.ready_events.get(oid)
         if state.phase != "DEQUEUED" or ready is None:
             self.error(index, "consumer start requires ready occurrence with admitted/dequeued input")
+        if ("ready_time_ns" in event and "ready_time_ns" in meta and
+                event.get("ready_time_ns") != meta.get("ready_time_ns")):
+            self.error(index, "top-level and metadata ready_time_ns disagree")
         reported_ready = event.get("ready_time_ns", meta.get("ready_time_ns"))
         if ready is None or reported_ready != ready.get("ts_ns"):
             self.error(index, "consumer ready_time_ns differs from reconstructed ready event")
@@ -561,6 +645,8 @@ class TraceStateMachine:
             return
         if len(ids) != len(set(ids)):
             self.error(index, "consumer input_object_ids must be unique")
+        if set(ids) != set(state.required_inputs):
+            self.error(index, "consumer input set differs from frozen ready required_inputs")
         primary = event.get("object_id")
         if primary is not None and primary not in ids:
             self.error(index, "consumer primary object must belong to input_object_ids")
@@ -575,6 +661,12 @@ class TraceStateMachine:
                 self.error(index, f"consumer input object was not admitted and dequeued: {obj_id}")
             if "consumer" not in obj.readable_by and obj.owner != "consumer":
                 self.error(index, f"consumer lacks declared access to object {obj_id}")
+            expected_dependencies = state.required_inputs.get(obj_id)
+            if expected_dependencies is None or expected_dependencies != obj.required_dependency_ids:
+                self.error(index, f"consumer input dependency binding differs from ready declaration: {obj_id}")
+            elif not set(expected_dependencies).issubset(state.dependencies):
+                self.error(index, f"consumer input has unsatisfied dependency: {obj_id}")
+            state.active_input_objects.add(obj_id)
         if self.context is not None:
             record = state.record
             if meta.get("frame_ids") != record.get("frame_ids") or meta.get("frame_selection_spec") != record.get("frame_selection_spec"):
@@ -590,7 +682,7 @@ class TraceStateMachine:
                 self.error(index, f"cannot verify actual augmentation draw: {exc}")
         state.advance("EXECUTING")
 
-    def _validate_wait(self, interval: IntervalState, admissions_by_id: dict[str, dict[str, Any]]) -> None:
+    def _validate_wait(self, interval: IntervalState, admissions_by_id: dict[str, list[dict[str, Any]]]) -> None:
         start, end = interval.start, interval.end
         oid = start.get("occurrence_id")
         availability_id = end.get("metadata", {}).get("availability_event_id")
@@ -599,18 +691,24 @@ class TraceStateMachine:
         if availability is None or availability.get("event_type") != "queue_admission":
             self.error(index, "exposed input wait must end at a queue admission event")
             return
-        if availability.get("occurrence_id") != oid or admissions_by_id.get(oid) is not availability:
-            self.error(index, "wait availability must be the same occurrence's required input admission")
+        logical = self.occurrences.get(oid)
+        valid_admissions = admissions_by_id.get(oid, [])
+        if (availability.get("occurrence_id") != oid or availability not in valid_admissions or
+                logical is None or availability.get("object_id") not in logical.required_inputs):
+            self.error(index, "wait availability must be a required input admission for the same occurrence")
         if not isinstance(availability.get("ts_ns"), int) or availability["ts_ns"] < start.get("ts_ns", 0):
             self.error(index, "wait availability precedes wait start")
         if availability["ts_ns"] > end.get("ts_ns", -1):
             self.error(index, "wait ends before legal input availability")
+        availability_index = self.event_indices.get(availability.get("event_id"), len(self.event_indices))
+        end_index = self.event_indices.get(end.get("event_id"), -1)
+        if availability_index >= end_index:
+            self.error(index, "wait availability must precede wait_end in event-stream order")
         if start.get("reason") != "input_unavailable" or start.get("metadata", {}).get("critical_dependency") != "input_admission":
             self.error(index, "wait critical dependency is not the declared input_admission")
         for compute_start, compute_end, _ in self.timeline.compute:
             if max(start["ts_ns"], compute_start) < min(end["ts_ns"], compute_end):
                 self.error(index, "exposed wait overlaps consumer compute interval")
-        logical = self.occurrences.get(oid)
         if logical is None:
             self.error(index, "wait occurrence is not in frozen workload")
         else:
@@ -627,7 +725,7 @@ class TraceStateMachine:
         if not isinstance(self.capacity, int) or isinstance(self.capacity, bool) or self.capacity <= 0:
             return self.errors + ["capacity_bytes must be a positive integer"]
 
-        admissions_by_id: dict[str, dict[str, Any]] = {}
+        admissions_by_id: dict[str, list[dict[str, Any]]] = {}
         for index, event in enumerate(events):
             if not isinstance(event, dict):
                 self.error(index, "event must be an object")
@@ -704,7 +802,7 @@ class TraceStateMachine:
             elif event_type == "consumer_wait_end":
                 pass
             if event_type == "queue_admission" and oid is not None:
-                admissions_by_id[oid] = event
+                admissions_by_id.setdefault(oid, []).append(event)
             if self.context is not None:
                 resources = self.context.get("resources")
                 if isinstance(resources, dict):
@@ -723,6 +821,10 @@ class TraceStateMachine:
         for interval in self.closed_intervals:
             if interval.start_type == "consumer_wait_start":
                 self._validate_wait(interval, admissions_by_id)
+        for i, (start, end, oid, _, _) in enumerate(self.timeline.waits):
+            if any(max(start, other_start) < min(end, other_end)
+                   for other_start, other_end, _, _, _ in self.timeline.waits[i + 1:]):
+                self.errors.append(f"consumer wait intervals overlap: {oid}")
         for i, (start, end, oid) in enumerate(self.timeline.compute):
             if any(max(start, other_start) < min(end, other_end)
                    for other_start, other_end, other_oid in self.timeline.compute[i + 1:]):

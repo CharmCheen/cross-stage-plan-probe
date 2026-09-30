@@ -1,0 +1,42 @@
+{
+  "source": "independently constructed event dictionaries in tests/adversarial/test_trace_state_machine.py",
+  "negative_replay_scenarios": 13,
+  "failed_replays": 0,
+  "cases": [
+    {
+      "finding": "F1 derived dependency identity",
+      "replay": "Three-deep dependency chain with distinct derived identities validates; foreign source identity is rejected.",
+      "result": "PASS"
+    },
+    {
+      "finding": "F2 wait causality",
+      "replay": "Same-timestamp wait_end before admission is rejected; admission before wait_end is accepted. Partial, nested, and same-start wait intervals are rejected; adjacent waits are accepted.",
+      "result": "PASS"
+    },
+    {
+      "finding": "F2 overlapping waits",
+      "replay": "Single-consumer overlapping wait intervals are rejected; adjacent waits on successive required inputs are accepted.",
+      "result": "PASS"
+    },
+    {
+      "finding": "F3 active input access lease",
+      "replay": "Mid-compute transfer revoking consumer access is rejected; transfer retaining explicit readable_by permission is accepted.",
+      "result": "PASS"
+    },
+    {
+      "finding": "F4 input-to-dependency binding",
+      "replay": "Unsatisfied second dependency, unknown dependency, foreign dependency, omitted required input, and forged transfer dependency binding are rejected.",
+      "result": "PASS"
+    },
+    {
+      "finding": "F5 aggregate multi-input state",
+      "replay": "Admit/dequeue A then admit/dequeue B is accepted; missing dequeue is rejected.",
+      "result": "PASS"
+    },
+    {
+      "finding": "N6 ready timestamp aliases",
+      "replay": "Top-level and metadata ready_time_ns disagreement is rejected.",
+      "result": "PASS"
+    }
+  ]
+}

@@ -68,10 +68,28 @@ def test_lifetime_reconciliation_and_all_layers(config, records):
 
 
 def test_intentional_leak_fails_validation():
-    trace = TraceRecorder("leak")
-    ledger = LiveByteLedger(trace)
-    ledger.allocate("leak-object", 12, "host", "producer")
-    errors = validate_trace(trace.events, 100)
+    from copy import deepcopy
+    from cspp.manifest import load_manifest
+    from pathlib import Path
+
+    from cspp.config import load_config
+    root = Path(__file__).resolve().parents[2]
+    config = load_config(root / "configs" / "m0_m2.local.yaml")
+    records = load_manifest(root / "data" / "manifests" / "e1.jsonl")
+    result = run_synthetic_pipeline(config, records, "leak")
+    events = deepcopy(result["events"])
+    terminal = events.pop()
+    template = next(event for event in events if event["event_type"] == "release")
+    leak = deepcopy(template)
+    leak.update(event_id="leak-allocation", event_type="allocation", object_id="leak-object",
+                ts_ns=template["ts_ns"] + 1, bytes=12, device="host", duration_ns=None,
+                reported_live_bytes={"host": 12, "pinned": 0, "gpu": 0},
+                host_live_bytes=12, pinned_live_bytes=0, gpu_live_bytes=0,
+                metadata={"owner": "producer", "object_role": "temporary"})
+    events.extend([leak, terminal])
+    terminal["metadata"]["reported_live_bytes"]["host"] = 12
+    errors = validate_trace(events, 100, expected_occurrences={r["occurrence_id"]: r for r in records},
+                            expected_run_context=result["run_context"])
     assert any("leaked live objects" in error for error in errors)
 
 
@@ -177,9 +195,11 @@ def test_validator_rejects_negative_live_bytes_and_duration(config, records):
 
 
 def test_validator_rejects_incorrect_ownership_transfer(config, records):
-    events = run_synthetic_pipeline(config, records, "ownership-test")["events"]
+    result = run_synthetic_pipeline(config, records, "ownership-test")
+    events = result["events"]
     copied = [dict(event, metadata=dict(event["metadata"])) for event in events]
     transfer = next(e for e in copied if e["event_type"] == "ownership_transfer")
     transfer["metadata"]["old_owner"] = "not-the-owner"
-    errors = validate_trace(copied, 100)
+    errors = validate_trace(copied, 100, expected_occurrences={r["occurrence_id"]: r for r in records},
+                            expected_run_context=result["run_context"])
     assert any("ownership transfer does not match live owner" in error for error in errors)
