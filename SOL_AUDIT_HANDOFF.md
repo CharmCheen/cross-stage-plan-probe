@@ -9,7 +9,7 @@ Scope is complete through M2. Stop here. Do not begin M3 until GPT-6.1 Sol has r
 - Repository: `https://github.com/CharmCheen/cross-stage-plan-probe.git`.
 - Audited implementation commit: `2a8ec958e32c0f09ceb04ddbb61939c6fed4dcce` (`bootstrap M0-M2 experiment harness`).
 - Handoff metadata commit: `eff815fb0d6f214b5d2643c8cddde3af5c67fc99` (initial provenance update); the R1–R4 remediation commit follows it.
-- Push: **pending final provenance commit and normal push verification**.
+- Push: **SUCCESS**; remediation and provenance commits through `8682ea0` were pushed normally to `origin/main`. This final handoff status update is committed and pushed as a follow-up.
 - Sol gate: **READY** for M0–M2 audit; this is not an approval. M3 has not started.
 - Working tree was clean at the implementation commit and after its first push. Generated `.egg-info` and Python caches are ignored and absent from the index. Repository text is canonical LF; staged whitespace check passed.
 - Historical provenance: M0–M2 were initially completed before this directory had Git metadata. The user then initialized Git; this task verified the origin and refreshed the M0 environment provenance. The original UNKNOWN snapshot is retained in historical M2 run manifests and explained here.
@@ -135,7 +135,7 @@ This section is an additive remediation record. The first M0–M2 Sol audit find
 ### Current gate and known limitations
 
 - **Sol re-audit gate: READY** — ready for the requested targeted Sol re-audit only. This is not `Sol approved` or `M3 approved`.
-- R1–R4 remediation commit: `8efb45be3b732cd3456740bc71bef4519e1ba387`; final provenance metadata will be committed separately after push verification.
+- R1–R4 remediation commit: `8efb45be3b732cd3456740bc71bef4519e1ba387`; provenance metadata commit: `8682ea0`.
 - M3 has not started. No `D_repr_*`, `D_gran_*`, H1/H2/H3/H4, optimizer, or research mechanism was added.
 - PyTorch/CUDA remain absent or `UNKNOWN`; FFmpeg is unavailable; no real video workload or GPU training has run. These are capability limits, not evidence from M2.
 - The synthetic consumer models a single deterministic consumer with no alternate legal compute work. Real training stall attribution and instrumentation overhead still require validation at the appropriate later stage.
