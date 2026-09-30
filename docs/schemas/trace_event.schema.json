@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CSPP Trace Event",
+  "type": "object",
+  "required": [
+    "run_id",
+    "ts_ns",
+    "event_type",
+    "plan_d",
+    "plan_t"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "ts_ns": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "plan_d": {
+      "type": "string"
+    },
+    "plan_t": {
+      "type": "string"
+    },
+    "step_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "sample_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "occurrence_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "microbatch_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "object_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operator": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "device": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "host_live_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "pinned_live_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "gpu_live_bytes": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

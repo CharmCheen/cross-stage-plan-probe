@@ -1,0 +1,21 @@
+{
+  "milestone": "M0",
+  "status": "COMPLETE",
+  "checks": {
+    "package_import": "PASS",
+    "config_loading_and_validation": "PASS",
+    "environment_probe": "PASS; unavailable capabilities include UNKNOWN plus reason",
+    "environment_artifact": "PASS; JSON and Markdown generated",
+    "cli_smoke": "PASS; python -m cspp.cli --help",
+    "doctor_command": "PASS",
+    "acceptance": "PASS; 31 total tests passed"
+  },
+  "provenance": {
+    "git_worktree": "PASS",
+    "branch": "main",
+    "origin": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+    "commit": "PRE-COMMIT",
+    "dirty_at_capture": true
+  },
+  "historical_note": "Original M0 capture preceded Git initialization and recorded Git fields as UNKNOWN."
+}

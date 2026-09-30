@@ -1,0 +1,54 @@
+{
+  "A_no_backpressure": {
+    "errors": [],
+    "event_count": 39,
+    "final_live_bytes": {
+      "gpu": 0,
+      "host": 0,
+      "pinned": 0
+    },
+    "final_queue_bytes": 0,
+    "input_waiting": true,
+    "queue_blocked": false,
+    "valid": true
+  },
+  "B_byte_credit_block": {
+    "errors": [],
+    "event_count": 43,
+    "final_live_bytes": {
+      "gpu": 0,
+      "host": 0,
+      "pinned": 0
+    },
+    "final_queue_bytes": 0,
+    "input_waiting": true,
+    "queue_blocked": true,
+    "valid": true
+  },
+  "C_input_starvation": {
+    "errors": [],
+    "event_count": 43,
+    "final_live_bytes": {
+      "gpu": 0,
+      "host": 0,
+      "pinned": 0
+    },
+    "final_queue_bytes": 0,
+    "input_waiting": true,
+    "queue_blocked": false,
+    "valid": true
+  },
+  "D_overlapping_lifetimes": {
+    "errors": [],
+    "event_count": 39,
+    "final_live_bytes": {
+      "gpu": 0,
+      "host": 0,
+      "pinned": 0
+    },
+    "final_queue_bytes": 0,
+    "input_waiting": true,
+    "queue_blocked": false,
+    "valid": true
+  }
+}

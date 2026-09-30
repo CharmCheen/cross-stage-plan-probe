@@ -1,0 +1,11 @@
+python -m pytest tests/unit/test_m1_legality.py -q
+9 passed
+
+python -m pytest -q
+31 passed
+
+python -m cspp.cli validate-manifest --manifest data/manifests/e1.jsonl
+exit 0; 3 occurrences; stable manifest hash
+
+python -m cspp.cli legality-check --config configs/m0_m2.local.yaml
+exit 0; valid=true; 3 occurrences

@@ -1,0 +1,14 @@
+python -m pytest tests/unit/test_m2_trace.py -q
+15 passed
+
+python scripts/generate_m2_fixtures.py
+exit 0; all four fixture traces valid
+
+python -m cspp.cli smoke --config configs/m0_m2.local.yaml --run-id m2-synthetic-smoke
+exit 0; 43 events; final live bytes and queue bytes are zero
+
+python -m cspp.cli audit-export --run m2-synthetic-smoke --out artifacts/milestones/M2/audit_export
+exit 0
+
+python -m pytest -q
+31 passed

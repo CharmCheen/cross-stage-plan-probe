@@ -1,0 +1,18 @@
+python -m pytest tests/unit/test_m0_bootstrap.py -q
+5 passed
+
+python -m pytest -q
+31 passed
+
+Initial bootstrap attempt before editable install:
+1 failed because the child-process CLI could not import the not-yet-installed src package; 21 passed.
+Resolution: ran the documented `python -m pip install -e ".[dev]"`; all subsequent CLI and full-suite checks passed.
+
+python -m cspp.cli doctor --config configs/m0_m2.local.yaml
+exit 0; environment artifact written; Git state UNKNOWN with reason
+
+python -m cspp.cli validate-config --config configs/m0_m2.local.yaml
+exit 0
+
+Refreshed provenance after Git initialization:
+branch=main; origin=https://github.com/CharmCheen/cross-stage-plan-probe.git; commit=PRE-COMMIT; dirty=true

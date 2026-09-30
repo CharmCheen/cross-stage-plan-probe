@@ -1,0 +1,40 @@
+experiment:
+  name: e_minus_1_local
+  mode: replay
+  seed: 20260930
+  calibration_fraction: 0.5
+  competitive_training_margin: 0.10
+
+resources:
+  cpu_threads: 8
+  host_memory_budget_bytes: 17179869184   # example 16 GiB experiment budget, not machine total
+  pinned_memory_budget_bytes: 2147483648
+  gpu_devices: [0]
+  gpu_memory_budget_bytes: null
+  queue_byte_budget: 1073741824
+
+video:
+  backend: pyav
+  cache_policy: controlled
+  frame_selection: frozen_manifest
+
+trace:
+  enabled: true
+  format: parquet
+  level: full
+
+plans:
+  input: [D_repr_early, D_repr_compact, D_gran_whole, D_gran_chunk]
+  training: [T_fifo, T_meta]
+
+baselines:
+  H1_metadata_first_byte_credit: true
+  H2_compact_late: true
+  H3_two_cost_greedy: false
+  H4_small_joint_tuning: false
+
+measurement:
+  warmup_steps: 20
+  screen_steps: 256
+  repeats: 3
+  randomize_run_order: true

@@ -1,0 +1,70 @@
+version: '1.1'
+milestones:
+- id: M0
+  name: bootstrap
+  depends_on: []
+  sol_audit_required: true
+  required_outputs:
+  - artifacts/milestones/M0/SUMMARY.md
+  - artifacts/milestones/M0/checks.json
+- id: M1
+  name: manifest_legality
+  depends_on:
+  - M0
+  sol_audit_required: false
+- id: M2
+  name: instrumentation
+  depends_on:
+  - M1
+  sol_audit_required: true
+- id: M3
+  name: input_plans
+  depends_on:
+  - M2
+  sol_audit_required: false
+- id: M4
+  name: training_replay
+  depends_on:
+  - M2
+  sol_audit_required: false
+- id: M5
+  name: H1_H2
+  depends_on:
+  - M3
+  - M4
+  sol_audit_required: true
+- id: M6
+  name: zero_opportunity
+  depends_on:
+  - M5
+  sol_audit_required: false
+  early_stop_allowed: true
+- id: M7
+  name: matrix
+  depends_on:
+  - M6
+  sol_audit_required: true
+  early_stop_allowed: true
+- id: M8
+  name: H3_H4_REF
+  depends_on:
+  - M7
+  sol_audit_required: false
+  early_stop_allowed: true
+- id: M9
+  name: holdout_causal_stats
+  depends_on:
+  - M8
+  sol_audit_required: true
+  early_stop_allowed: true
+- id: M10
+  name: real_gpu_validation
+  depends_on:
+  - M9
+  sol_audit_required: true
+  optional: true
+- id: M11
+  name: final_decision
+  depends_on:
+  - M9
+  sol_audit_required: true

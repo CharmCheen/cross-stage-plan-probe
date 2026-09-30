@@ -1,0 +1,19 @@
+{
+  "milestone": "M1",
+  "status": "COMPLETE",
+  "checks": {
+    "manifest_roundtrip": "PASS",
+    "manifest_hash_stability": "PASS under record reordering",
+    "deterministic_replay": "PASS",
+    "reordered_execution_same_semantics": "PASS",
+    "duplicate_occurrence_failure": "PASS",
+    "missing_occurrence_failure": "PASS",
+    "sample_moved_across_step_failure": "PASS",
+    "rng_key_mismatch_failure": "PASS",
+    "microbatch_and_workload_mismatch_failure": "PASS",
+    "validate_manifest_cli": "PASS",
+    "legality_check_cli": "PASS",
+    "acceptance": "PASS; 31 total tests passed"
+  },
+  "manifest_hash": "795433da39d680f0c99d67f3b7470cb14bc3039770bf81b284688d62492e8d12"
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Run Manifest",
+  "type": "object",
+  "required": [
+    "run_id",
+    "git_commit",
+    "config_hash",
+    "manifest_hash",
+    "plan_d",
+    "plan_t",
+    "seed",
+    "resources"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "config_hash": {
+      "type": "string"
+    },
+    "manifest_hash": {
+      "type": "string"
+    },
+    "plan_d": {
+      "type": "string"
+    },
+    "plan_t": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "resources": {
+      "type": "object"
+    },
+    "environment": {
+      "type": "object"
+    },
+    "cache_state": {
+      "type": "string"
+    },
+    "valid": {
+      "type": "boolean"
+    },
+    "invalid_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

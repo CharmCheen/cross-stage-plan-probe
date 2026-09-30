@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sol Audit Decision",
+  "type": "object",
+  "required": [
+    "milestone",
+    "decision",
+    "summary",
+    "blocking_findings",
+    "required_actions"
+  ],
+  "properties": {
+    "milestone": {
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "APPROVE",
+        "REWORK",
+        "BLOCK",
+        "EARLY_STOP_RECOMMENDATION"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "blocking_findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence_reviewed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

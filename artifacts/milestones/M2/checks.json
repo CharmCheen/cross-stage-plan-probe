@@ -1,0 +1,30 @@
+{
+  "milestone": "M2",
+  "status": "COMPLETE",
+  "checks": {
+    "deterministic_semantic_trace_order": "PASS",
+    "byte_credit_70_plus_50_over_100": "PASS; B blocked until A release",
+    "allocation_release_reconciliation": "PASS; final host/pinned/gpu bytes are zero",
+    "intentional_leak_failure": "PASS",
+    "double_free_and_wrong_owner_failure": "PASS",
+    "input_starvation_attribution": "PASS; input dependency and no legal work recorded",
+    "producer_queue_backpressure": "PASS; blocked interval and reason recorded",
+    "ready_causality": "PASS; invalid order rejected",
+    "ready_time_worker_bytes_fields": "PASS; explicit ready_time_ns, worker, bytes_in, bytes_out are serialized",
+    "trace_run_and_occurrence_identity": "PASS",
+    "queue_byte_accounting": "PASS; fixture trace validator reconciles admission/release",
+    "four_fixture_cases": "PASS; all generated traces validate",
+    "trace_overhead_diagnostic": "PASS; 3 matched pairs generated",
+    "audit_export": "PASS",
+    "negative live-byte rejection": "PASS",
+    "invalid ownership transfer rejection": "PASS",
+    "acceptance": "PASS; 31 total tests passed"
+  },
+  "synthetic_smoke": {
+    "run_id": "m2-synthetic-smoke",
+    "event_count": 43,
+    "valid": true,
+    "final_live_bytes": {"host": 0, "pinned": 0, "gpu": 0},
+    "final_queue_bytes": 0
+  }
+}

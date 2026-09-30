@@ -1,0 +1,62 @@
+{
+  "captured_at_utc": "2026-09-30T03:59:03.229714+00:00",
+  "cpu": {
+    "logical_cores": 16,
+    "model": "AMD Ryzen 7 5800H with Radeon Graphics         ",
+    "physical_cores": 8,
+    "physical_cores_reason": "physical core count unavailable"
+  },
+  "cuda_available": "UNKNOWN",
+  "cuda_runtime_version": "UNKNOWN",
+  "ffmpeg": {
+    "available": false,
+    "reason": "[WinError 2] \u7cfb\u7edf\u627e\u4e0d\u5230\u6307\u5b9a\u7684\u6587\u4ef6\u3002",
+    "version": "UNKNOWN"
+  },
+  "git": {
+    "available": true,
+    "branch": "main",
+    "branch_reason": null,
+    "commit": "PRE-COMMIT",
+    "commit_reason": "Git worktree exists but has no HEAD commit at probe time",
+    "dirty": true,
+    "origin": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+    "origin_reason": null,
+    "root": "D:/FDU/Experiment/cross-stage-plan-probe",
+    "root_reason": null,
+    "status_reason": null
+  },
+  "gpu": {
+    "count": 1,
+    "devices": [
+      {
+        "model": "NVIDIA GeForce RTX 3050 Laptop GPU",
+        "vram_mib": 4096
+      }
+    ],
+    "query_reason": null
+  },
+  "kernel": "11",
+  "os": {
+    "machine": "AMD64",
+    "release": "11",
+    "system": "Windows",
+    "version": "10.0.26200"
+  },
+  "python": {
+    "executable": "D:\\anaconda3\\python.exe",
+    "version": "3.13.9"
+  },
+  "pytorch_reason": "PyTorch is not installed (optional at M0\u2013M2)",
+  "pytorch_version": "UNKNOWN",
+  "ram_reason": null,
+  "ram_total_bytes": 14877257728,
+  "schema_version": "1.0",
+  "storage": {
+    "filesystem": "NTFS",
+    "filesystem_reason": null,
+    "free_bytes": 103655211008,
+    "path": "D:\\FDU\\Experiment\\cross-stage-plan-probe",
+    "total_bytes": 294971764736
+  }
+}

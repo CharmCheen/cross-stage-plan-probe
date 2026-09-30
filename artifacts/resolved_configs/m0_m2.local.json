@@ -1,0 +1,44 @@
+{
+  "_sha256": "08d8abf740c713ba737d9c0156565469d9f0db0f33256b529c5869e9707ea221",
+  "_source": "D:\\FDU\\Experiment\\cross-stage-plan-probe\\configs\\m0_m2.local.yaml",
+  "experiment": {
+    "mode": "instrumentation_fixture",
+    "name": "m0_m2_synthetic",
+    "seed": 20260930,
+    "workload_version": "fixture-v1"
+  },
+  "fixture": {
+    "consumer_delays_ms": [
+      15,
+      2,
+      2
+    ],
+    "deterministic_order": true,
+    "object_sizes": [
+      70,
+      50,
+      30
+    ],
+    "producer_delays_ms": [
+      0,
+      5,
+      0
+    ],
+    "ready_stage": "consumer_input_complete"
+  },
+  "manifest": {
+    "path": "data/manifests/e1.jsonl"
+  },
+  "resources": {
+    "cpu_threads": 1,
+    "gpu_memory_budget_bytes": 0,
+    "host_memory_budget_bytes": 1048576,
+    "pinned_memory_budget_bytes": 0,
+    "queue_byte_budget": 100
+  },
+  "trace": {
+    "enabled": true,
+    "format": "jsonl",
+    "level": "full"
+  }
+}

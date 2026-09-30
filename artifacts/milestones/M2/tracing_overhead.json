@@ -1,0 +1,18 @@
+{
+  "fixture": "same synthetic producer-consumer config and manifest",
+  "measurement": "diagnostic only; timing includes Python thread startup and fixture delays",
+  "median_relative_overhead": 0.0013099292638197536,
+  "repeats_per_mode": 3,
+  "tracing_off_median_ns": 20993500,
+  "tracing_off_wall_ns": [
+    20993500,
+    21246700,
+    20731800
+  ],
+  "tracing_on_median_ns": 21021000,
+  "tracing_on_wall_ns": [
+    21113600,
+    21021000,
+    20636200
+  ]
+}
