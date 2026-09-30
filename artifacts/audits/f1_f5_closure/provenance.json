@@ -3,7 +3,7 @@
   "branch": "main",
   "base_commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
   "implementation_commit": "2853c59365ea39e2edaa7b8d20deccf869e808e3",
-  "provenance_note": "This artifact is finalized in the follow-up metadata commit immediately after implementation_commit; final repository HEAD is reported in the handoff and final task result.",
+  "provenance_note": "This artifact is finalized in a follow-up metadata commit immediately after implementation_commit. The final repository HEAD is verified against origin/main and reported in the final task result.",
   "remote_main_at_start": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
   "cli_base_commit": "31e01e2b751a6003cf2fa05e2681bd269528d8aa",
   "cli_source_overlay": [
