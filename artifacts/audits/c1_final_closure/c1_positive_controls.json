@@ -1,0 +1,21 @@
+{
+  "passed": 3,
+  "failed": 0,
+  "cases": [
+    {
+      "case": "producer-owned",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "case": "two-inputs-two-dependencies",
+      "valid": true,
+      "errors": []
+    },
+    {
+      "case": "one-dependency-two-inputs",
+      "valid": true,
+      "errors": []
+    }
+  ]
+}

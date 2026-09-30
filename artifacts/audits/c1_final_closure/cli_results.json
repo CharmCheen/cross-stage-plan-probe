@@ -1,0 +1,44 @@
+[
+  {
+    "command": "doctor",
+    "exit_code": 0,
+    "stdout": "{\n  \"environment\": \"artifacts/environment.json\",\n  \"git\": {\n    \"available\": true,\n    \"root\": \"C:/Users/12914/AppData/Local/Temp/cspp-c1-validation-d5403e797ab54bada96f3b5301351b6d\",\n    \"root_reason\": null,\n    \"commit\": \"3493e4de8e86140512bc965fed0c2e8ce5f1504c\",\n    \"commit_reason\": null,\n    \"branch\": \"main\",\n    \"branch_reason\": null,\n    \"origin\": \"D:/FDU/Experiment/cross-stage-plan-probe\",\n    \"origin_reason\": null,\n    \"dirty\": true,\n    \"status_reason\": null\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": "validate-config",
+    "exit_code": 0,
+    "stdout": "VALID C:\\Users\\12914\\AppData\\Local\\Temp\\cspp-c1-validation-d5403e797ab54bada96f3b5301351b6d\\configs\\m0_m2.local.yaml -> artifacts\\resolved_configs\\m0_m2.local.json\n",
+    "stderr": ""
+  },
+  {
+    "command": "validate-manifest",
+    "exit_code": 0,
+    "stdout": "{\n  \"valid\": true,\n  \"occurrences\": 3,\n  \"manifest_hash\": \"1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": "legality-check",
+    "exit_code": 0,
+    "stdout": "{\n  \"valid\": true,\n  \"errors\": [],\n  \"sample_manifest_hash\": \"1b7be13e9d18d9d367fc3e697cd795ce1de728e9f8e1159ba1df6b82f19bcf3a\",\n  \"transform_draws_hash\": \"237dd63f9c80404ab0e87bb0c2525321d02805bcf483e9e80615821f70efb0b4\",\n  \"frame_ids_hash\": \"df6e47c912dbc839404525e436b83e91c5f6aee5ff3b15bf09db300889ec41df\",\n  \"rng_scheme_version\": \"hmac-sha256-canonical-json-tuple-v2\",\n  \"occurrence_count\": 3,\n  \"seed\": 20260930\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": "smoke",
+    "exit_code": 0,
+    "stdout": "{\n  \"valid\": true,\n  \"run_id\": \"c1-final-closure-20260930\",\n  \"trace\": \"C:\\\\Users\\\\12914\\\\AppData\\\\Local\\\\Temp\\\\cspp-c1-validation-d5403e797ab54bada96f3b5301351b6d\\\\artifacts\\\\runs\\\\c1-final-closure-20260930\\\\trace.jsonl\",\n  \"events\": 49,\n  \"final_live_bytes\": {\n    \"host\": 0,\n    \"pinned\": 0,\n    \"gpu\": 0\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": "validate-trace",
+    "exit_code": 0,
+    "stdout": "{\n  \"valid\": true,\n  \"errors\": [],\n  \"events\": 49\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": "audit-export",
+    "exit_code": 0,
+    "stdout": "exported c1-final-closure-20260930 -> C:\\Users\\12914\\AppData\\Local\\Temp\\cspp-c1-validation-d5403e797ab54bada96f3b5301351b6d\\artifacts\\audits\\c1_export\n",
+    "stderr": ""
+  }
+]

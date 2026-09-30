@@ -435,6 +435,16 @@ class TraceStateMachine:
                 return
             if not set(dependency_ids).issubset(state.dependencies):
                 self.error(index, f"required input {input_id} has an unsatisfied dependency binding")
+            obj = self.objects.get(input_id)
+            if obj is None or obj.status != "ALLOCATED":
+                self.error(index, f"ready input must already be allocated and alive: {input_id}")
+                return
+            if obj.occurrence_id != oid or obj.role != "input":
+                self.error(index, f"ready input has foreign occurrence or non-input role: {input_id}")
+                return
+            if obj.required_dependency_ids != tuple(dependency_ids):
+                self.error(index, f"ready input dependency binding differs from allocation: {input_id}")
+                return
             input_bindings[input_id] = tuple(dependency_ids)
         binding_dependency_ids = {dep for values in input_bindings.values() for dep in values}
         if binding_dependency_ids != set(required):
@@ -465,12 +475,15 @@ class TraceStateMachine:
         required_dependencies = meta.get("required_dependency_ids", [])
         if role == "input":
             logical = self.occurrences.get(oid)
-            expected_dependencies = logical.required_inputs.get(object_id) if logical else None
-            if expected_dependencies is None:
-                self.error(index, "input allocation is not declared by the occurrence ready event")
+            if logical is not None and logical.ready_ns is not None:
+                self.error(index, "input allocation must precede the occurrence ready declaration")
                 return
-            if not isinstance(required_dependencies, list) or tuple(required_dependencies) != expected_dependencies:
-                self.error(index, "input allocation dependency binding differs from ready declaration")
+            # Record the immutable declaration now; satisfaction and membership
+            # are checked when ready looks back at this live physical object.
+            if (not isinstance(required_dependencies, list) or not required_dependencies or
+                    any(not isinstance(value, str) or not value for value in required_dependencies) or
+                    len(required_dependencies) != len(set(required_dependencies))):
+                self.error(index, "input allocation requires a non-empty unique dependency binding")
                 return
         elif required_dependencies not in ([], None):
             self.error(index, "temporary object cannot claim consumer input dependencies")

@@ -1,0 +1,14 @@
+{
+  "command": "python -m pytest tests/adversarial/test_trace_state_machine.py -q -k \"f1 or f2 or f3 or f4 or f5 or n6\"",
+  "results_file": "f1_f5_tests.txt",
+  "F1": "PASS",
+  "F2": "PASS",
+  "F3": "PASS",
+  "F4": "PASS",
+  "F5": "PASS",
+  "N6": "PASS",
+  "passed": 51,
+  "failed": 0,
+  "skipped": 0,
+  "deselected": 21
+}

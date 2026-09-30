@@ -1,0 +1,46 @@
+{
+  "expected_occurrences": {
+    "fixture-A-epoch0": {
+      "sample_id": "fixture-A",
+      "occurrence_id": "fixture-A-epoch0",
+      "step_id": 0,
+      "microbatch_id": "mb-0",
+      "sample_order_baseline": 0,
+      "frame_selection_spec": {
+        "method": "fixed_fixture",
+        "version": "1"
+      },
+      "frame_ids": [
+        0,
+        2
+      ],
+      "augmentation_key": "fixture-A-epoch0/augment-v1",
+      "workload_version": "fixture-v1",
+      "weight": 1.0,
+      "rng_scheme_version": "hmac-sha256-canonical-json-tuple-v2"
+    }
+  },
+  "expected_run_context": {
+    "run_id": "c1-independent",
+    "manifest_hash": "7a6ec4ebccb385ed2695f77465c982741eddd3db35242837438b8d02dfd9917c",
+    "seed": 20260930,
+    "workload_version": "fixture-v1",
+    "rng_scheme_version": "hmac-sha256-canonical-json-tuple-v2",
+    "draws_hash": "13934a5db6d3eb4d6b8030ef2e9e9f9c5152bf89f0d6cde94529f51e1decd697",
+    "frame_ids_hash": "7e31ccc2d99dcd4a94ace51fe3871a223d8d6a66265b208f4945938a280e5e53",
+    "input_plan_id": "synthetic",
+    "training_plan_id": "consumer",
+    "resolved_config_hash": "6e2d3887998098a8f05a6e4582eb885a44de9e2d7d2c419e4f0dba629d9c5122",
+    "resources": {
+      "cpu_threads": 1,
+      "host_memory_budget_bytes": 1048576,
+      "pinned_memory_budget_bytes": 0,
+      "gpu_memory_budget_bytes": 0,
+      "queue_byte_budget": 100
+    },
+    "git_commit": "UNKNOWN",
+    "git_dirty": "UNKNOWN",
+    "work_identity_hash": "85b79aaa37b90a54a8498a448bec4045712ff2e15093c6b0b47eb66d5e27b455",
+    "run_context_hash": "123a2e1e2d4b4d796c415f28999ca30da9dd55c892a4a002709e3b53e18bc3f7"
+  }
+}

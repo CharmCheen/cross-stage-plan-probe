@@ -172,6 +172,20 @@ class ByteCreditQueue:
         if not isinstance(nbytes, int) or nbytes <= 0 or nbytes > self.capacity_bytes:
             raise ValueError("object bytes must be positive and no larger than capacity")
         with self._condition:
+            preallocated = oid in self.ledger.history
+            if preallocated:
+                allocated = self.ledger.live.get(oid)
+                if (allocated is None or allocated["bytes"] != nbytes or allocated["layer"] != "host" or
+                        allocated.get("object_role") != "input" or allocated["owner"] != "producer" or
+                        any(allocated.get(key) != item.get(key) for key in IDENTITY_FIELDS) or
+                        allocated.get("required_dependency_ids") != item.get("required_dependency_ids")):
+                    raise ValueError("preallocated queue input identity/binding is invalid")
+                transfer = self.ledger.transfer(oid, "queue")
+                transfer["metadata"].update({"reported_credit_bytes": self.queued_bytes,
+                                            "current_queue_bytes": self.queued_bytes,
+                                            "current_item_bytes": self.item_bytes,
+                                            "capacity_basis": "unreleased_object_credits",
+                                            "capacity_bytes": self.capacity_bytes})
             self.trace.emit("queue_admission_request", **_event_ids(item), object_id=oid, bytes=nbytes,
                             metadata={"reported_credit_bytes": self.queued_bytes, "current_queue_bytes": self.queued_bytes,
                                       "current_item_bytes": self.item_bytes,
@@ -202,8 +216,9 @@ class ByteCreditQueue:
                                                   "current_item_bytes": self.item_bytes,
                                                   "capacity_basis": "unreleased_object_credits",
                                                   "capacity_bytes": self.capacity_bytes})
-            self.ledger.allocate(oid, nbytes, "host", "queue", object_role="input",
-                                 required_dependency_ids=item.get("required_dependency_ids", []), **_event_ids(item))
+            if not preallocated:
+                self.ledger.allocate(oid, nbytes, "host", "queue", object_role="input",
+                                     required_dependency_ids=item.get("required_dependency_ids", []), **_event_ids(item))
             self.credits[oid] = nbytes
             self.queued_bytes += nbytes
             self.item_bytes += nbytes
@@ -320,6 +335,8 @@ def run_synthetic_pipeline(config: dict[str, Any], records: list[dict[str, Any]]
                 oid, nbytes = f"obj-{occurrence}", fixture["object_sizes"][i]
                 dep = f"dep-{occurrence}-decoded"
                 dep_meta = {"dependency_id": dep, "dependency_kind": "consumer_input"}
+                ledger.allocate(oid, nbytes, "host", "producer", object_role="input",
+                                required_dependency_ids=[dep], **ids)
                 op = trace.begin_interval("operator_begin", **ids, object_id=oid, operator="fixture_source",
                                           metadata=dep_meta)
                 delay = fixture["producer_delays_ms"][i]

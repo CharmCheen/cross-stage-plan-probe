@@ -119,6 +119,13 @@ def _hand_trace(config, records, *, input_counts=None, dependencies=None,
         bindings = [{"object_id": object_id, "dependency_ids": [dep for dep, _ in dep_ids[oid]]}
                     for object_id in object_ids[oid]]
         required_dependency_ids = sorted({dep for binding in bindings for dep in binding["dependency_ids"]})
+        # Physical inputs must exist before readiness can declare them available.
+        for binding in bindings:
+            alloc = emit("allocation", record, object_id=binding["object_id"], bytes=10, device="host",
+                         metadata={"owner": "queue", "object_role": "input",
+                                   "required_dependency_ids": list(binding["dependency_ids"])})
+            live["host"] += 10
+            live_snapshot(alloc)
         ready = emit("ready", record, object_id=object_ids[oid][0],
                      metadata={"required_dependency_ids": required_dependency_ids,
                                "required_inputs": bindings,
@@ -132,14 +139,6 @@ def _hand_trace(config, records, *, input_counts=None, dependencies=None,
         nbytes = 10
         req = emit("queue_admission_request", record, object_id=object_id, bytes=nbytes)
         queue_snapshot(req)
-        dep_binding = next(binding["dependency_ids"] for event in out
-                           if event["event_type"] == "ready" and event["occurrence_id"] == oid
-                           for binding in event["metadata"]["required_inputs"] if binding["object_id"] == object_id)
-        alloc = emit("allocation", record, object_id=object_id, bytes=nbytes, device="host",
-                     metadata={"owner": "queue", "object_role": "input",
-                               "required_dependency_ids": dep_binding})
-        live["host"] += nbytes
-        live_snapshot(alloc)
 
     def admit(item):
         nonlocal credit, queue_items

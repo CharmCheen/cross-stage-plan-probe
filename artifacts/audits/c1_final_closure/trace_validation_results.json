@@ -1,0 +1,10 @@
+{
+  "independent_c1_valid": true,
+  "cli_smoke_run": "c1-final-closure-20260930",
+  "cli_recheck": {
+    "errors": [],
+    "events": 49,
+    "valid": true
+  },
+  "CLI": "PASS"
+}

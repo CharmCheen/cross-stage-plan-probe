@@ -265,3 +265,20 @@ This section is additive. The initial audit, R1–R4 remediation, RF1–RF6 conv
 - **Final Sol closure re-audit gate: READY** — ready for GPT-6.1 Sol final closure re-audit only. This does not mean `APPROVED`, `ENGINEERING_READY_FOR_M3`, or `M3 approved`.
 - M3 has not started. No real video, FFmpeg/PyAV backend, PyTorch, CUDA, GPU execution, optimizer, or research mechanism was added.
 - Implementation and provenance commits are recorded in `artifacts/audits/f1_f5_closure/provenance.json` after they are created.
+
+## C1 final closure patch
+
+The previous closure re-audit verdict remains `APPROVE_WITH_REQUIRED_FIXES` / `ENGINEERING_NOT_READY`. Its sole remaining MAJOR finding was C1: a legal producer input allocation preceding readiness was rejected. All previous audit, R1–R4, RF1–RF6, and F1–F5 evidence remains unchanged.
+
+- **Original Sol counterexample:** producer-owned input allocation → producer work → dependency satisfaction → ready → queue transfer/admission/dequeue → consumer → release/credit return.
+- **Minimal fix:** allocation immediately records the physical object's lifetime and immutable dependency declaration. Ready looks back at existing live input objects and checks occurrence, role, binding, and satisfied dependencies. Ready cannot rely on missing, released, foreign, or future allocations. Allocation contributes to live bytes before readiness.
+- **Runtime fixture:** allocate before producer work, then transfer the existing object to the queue; no second allocation is emitted. Queue byte-credit thresholds and terminal return rules are unchanged.
+- **Independent replay:** PASS, no errors; the base validator's rejection is retained as historical evidence.
+- **Negative controls:** 6 passed, covering never allocated, conflicting binding, unsatisfied dependency, foreign occurrence, late allocation, and pre-ready release.
+- **Positive controls:** 3 passed, covering producer-owned buffer, multiple preallocated inputs, and one dependency supporting multiple inputs.
+- **Regression:** F1–F5/N6 51 passed; RF2/RF6 18 passed; full pytest 143 passed, 0 failed, 0 skipped. Existing negative assertions were retained; only the hand-built physical allocation order was updated for the corrected readiness contract.
+- **CLI:** doctor/config/manifest/legality/smoke/validate-trace/audit-export PASS in an isolated source-overlay clone; 49-event smoke with zero terminal live bytes. The overlay/base provenance is explicitly retained.
+- **Development disclosure:** the new hand oracle initially omitted required plan aliases (4 failures); corrected fixture fields produced 10 passing C1 tests. No validation bypass or reduced assertion was used.
+- **Artifacts:** `artifacts/audits/c1_final_closure/` contains replay, controls, test logs, current trace/validation, environment/config, export, and provenance. Implementation SHA is recorded in the subsequent provenance metadata commit.
+- **Final C1 closure re-audit gate: READY** — pending Sol's C1-only closure re-audit.
+- M3 has not started. No real video/backend, PyTorch/CUDA, GPU execution, or research mechanism was added. Existing capability limitations remain unchanged.

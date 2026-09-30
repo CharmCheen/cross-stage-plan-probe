@@ -1,0 +1,42 @@
+{
+  "repository": "https://github.com/CharmCheen/cross-stage-plan-probe.git",
+  "branch": "main",
+  "base_commit": "3493e4de8e86140512bc965fed0c2e8ce5f1504c",
+  "implementation_commit": "PRE-COMMIT",
+  "cli_base_commit": "3493e4de8e86140512bc965fed0c2e8ce5f1504c",
+  "cli_source_overlay": [
+    "src/cspp/tracing/trace.py",
+    "src/cspp/tracing/validator.py"
+  ],
+  "cli_overlay_note": "Patched source copied to isolated clone. Captured Git dirty=true reflects overlay; no historical environment artifact overwritten.",
+  "scope": "C1 input allocation/readiness closure only; no M3",
+  "development_test_failure": {
+    "passed": 6,
+    "failed": 4,
+    "reason": "New hand-built oracle initially omitted mandatory plan_d/plan_t aliases; fixed the oracle fields, not validator strictness."
+  },
+  "capability_limits": [
+    "PyTorch absent",
+    "CUDA UNKNOWN",
+    "FFmpeg unavailable",
+    "no real video workload",
+    "no GPU training"
+  ],
+  "tests": {
+    "passed": 143,
+    "failed": 0,
+    "skipped": 0
+  },
+  "C1": {
+    "independent_replay": "PASS",
+    "negative_passed": 6,
+    "positive_passed": 3
+  },
+  "M0": "PASS",
+  "M1": "PASS",
+  "M2": "PASS",
+  "source_overlay_sha256": {
+    "src/cspp/tracing/trace.py": "6a88b4090a7fb26e61154028d707cad8e3511fa9f73f4b637a9f19f95f28c95b",
+    "src/cspp/tracing/validator.py": "c44fdcfb5dd945c9813908a9efaf95498eca86e3943f82f2138be34c8aa6211b"
+  }
+}

@@ -1,0 +1,18 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.5.0
+rootdir: D:\FDU\Experiment\cross-stage-plan-probe
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.10.0
+collected 143 items
+
+tests\adversarial\test_c1_allocation_before_ready.py ..........          [  6%]
+tests\adversarial\test_trace_state_machine.py .......................... [ 25%]
+..............................................                           [ 57%]
+tests\integration\test_cli_acceptance.py .....                           [ 60%]
+tests\unit\test_m0_bootstrap.py .....                                    [ 64%]
+tests\unit\test_m1_legality.py .........                                 [ 70%]
+tests\unit\test_m2_trace.py ...............                              [ 81%]
+tests\unit\test_sol_r1_r4.py ...........................                 [100%]
+
+============================ 143 passed in 21.10s =============================
